@@ -11,7 +11,8 @@ import numpy as np
 import gemmi
 
 from pandda_gemmi.interfaces import *
-
+from pandda_gemmi import constants
+from pandda_gemmi.dmaps import SparseDMap, save_dmap
 from pandda_gemmi.dmaps import (
     SparseDMap,
 )
@@ -35,12 +36,14 @@ class ProcessModel:
                  minimum_event_score=0.15,
                  local_highest_score_radius=8.0,
                  use_ligand_data=True,
+                 output_full_ground_state=False,
                  debug=False
                  ):
         self.minimum_z_cluster_size = minimum_z_cluster_size
         self.minimum_event_score = minimum_event_score
         self.local_highest_score_radius = local_highest_score_radius
         self.use_ligand_data = use_ligand_data
+        self.output_full_ground_state = output_full_ground_state
         self.debug = debug
 
     def __call__(self,  # *args, **kwargs
@@ -53,13 +56,19 @@ class ProcessModel:
                  score,
                  fs,
                  model_number,
-                 dtag
+                 dtag,
+                 characterization_datasets
                  ):
         # Get the statical maps
         mean, std, z = PointwiseMAD()(
             homogenized_dataset_dmap_array,
             characterization_set_dmaps_array
         )
+
+        if self.output_full_ground_state:
+            for _dtag, arr in zip(characterization_datasets, characterization_set_dmaps_array):
+                mean_grid = reference_frame.unmask(SparseDMap(arr))
+                save_dmap(mean_grid, fs.output.processed_datasets[dtag] / f'{_dtag}.ccp4')
 
         mean_grid = reference_frame.unmask(SparseDMap(mean))
         z_grid = reference_frame.unmask(SparseDMap((z - np.mean(z)) / np.std(z)))

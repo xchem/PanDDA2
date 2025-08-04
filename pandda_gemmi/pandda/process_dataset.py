@@ -310,7 +310,8 @@ def process_dataset(
             score_event,
             fs,
             model_number,
-            dtag
+            dtag,
+            [_dtag for _dtag in dtag_array[characterization_set_masks[model_number]] ]
         )()
         for model_number
         in models_to_process

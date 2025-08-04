@@ -93,6 +93,7 @@ class PanDDAKWArgs:
     rank_method: str = constants.ARGS_RANK_METHOD_DEFAULT
     rescore_event_method: str = constants.ARGS_RESCORE_EVENT_METHOD_DEFAULT
     source_pandda: Path = None
+    output_full_ground_state: bool = False
     debug: bool = False
     # debug: Debug = Debug.DEFAULT
 
@@ -654,6 +655,14 @@ class PanDDAKWArgs:
             help=constants.ARGS_RANK_METHOD_HELP,
         )
 
+
+
+        parser.add_argument(
+            '--output_full_ground_state',
+            type=lambda x: bool(strtobool(x)),
+            default=False,
+            help='Output the full ground state distributions used. VERY LARGE.',
+        )
         parser.add_argument(
             constants.ARGS_DEBUG,
             type=lambda x: bool(strtobool(x)),

@@ -47,6 +47,7 @@ if __name__ == '__main__':
     process_model = ProcessModel(
         minimum_event_score=event_model_config['minimum_event_score'],
         use_ligand_data=args.use_ligand_data,
+        output_full_ground_state=args.output_full_ground_state,
         debug=args.debug,
     )
 
