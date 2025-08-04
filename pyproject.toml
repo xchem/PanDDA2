@@ -29,7 +29,7 @@ dependencies = [
     "gdown",
     "torch==1.13.1",
     "pytorch-lightning",
-    'scikit-image'
+    'scikit-image',
     'gemmi'
 #    "gemmi@git+https://github.com/ConorFWild/gemmi.git#egg=flexible_interpolation"
 ] # Add project dependencies here, e.g. ["click", "numpy"]
@@ -38,8 +38,8 @@ license.file = "LICENSE"
 readme = "README.md"
 requires-python = ">=3.9"
 
-[project.optional-dependencies]
-intel = ["scikit-learn-intelex",]
+#[project.optional-dependencies]
+#intel = ["scikit-learn-intelex",]
 
 [tool.pytest.ini_options]
 addopts = "-x"
