@@ -1,4 +1,5 @@
 import time
+import os
 
 try:
     from sklearnex import patch_sklearn
@@ -66,9 +67,13 @@ class ProcessModel:
         )
 
         if self.output_full_ground_state:
+            try:
+                os.mkdir(fs.output.processed_datasets[dtag] / 'ground_state_distributions')
+            except Exception as e:
+                print(e)
             for _dtag, arr in zip(characterization_datasets, characterization_set_dmaps_array):
                 mean_grid = reference_frame.unmask(SparseDMap(arr))
-                save_dmap(mean_grid, fs.output.processed_datasets[dtag] / f'{_dtag}.ccp4')
+                save_dmap(mean_grid, fs.output.processed_datasets[dtag] / 'ground_state_distributions' / f'{_dtag}.ccp4')
 
         mean_grid = reference_frame.unmask(SparseDMap(mean))
         z_grid = reference_frame.unmask(SparseDMap((z - np.mean(z)) / np.std(z)))
