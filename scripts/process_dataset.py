@@ -72,5 +72,6 @@ if __name__ == '__main__':
         processor,
         dataset_refs,
         structure_array_refs,
-        score_build_ref
+        score_build_ref,
+        process_all=args.process_all
     )

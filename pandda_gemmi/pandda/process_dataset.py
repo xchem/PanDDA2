@@ -104,7 +104,8 @@ def process_dataset(
         processor,
         dataset_refs,
         structure_array_refs,
-        score_build_ref
+        score_build_ref,
+process_all=False
 ):
     pandda_events = {}
     autobuilds = {}
@@ -266,7 +267,7 @@ def process_dataset(
         dataset_dmap_array,
         reference_frame,
         PointwiseMAD(),
-        process_all=False
+        process_all=process_all
     )
     # print(f"Models to process are {models_to_process} out of {[x for x in characterization_sets]}")
 

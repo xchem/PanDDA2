@@ -94,6 +94,7 @@ class PanDDAKWArgs:
     rescore_event_method: str = constants.ARGS_RESCORE_EVENT_METHOD_DEFAULT
     source_pandda: Path = None
     output_full_ground_state: bool = False
+    process_all: bool = False
     debug: bool = False
     # debug: Debug = Debug.DEFAULT
 
@@ -656,7 +657,12 @@ class PanDDAKWArgs:
         )
 
 
-
+        parser.add_argument(
+            '--process_all',
+            type=lambda x: bool(strtobool(x)),
+            default=False,
+            help='Process even bad models. VERY LARGE.',
+        )
         parser.add_argument(
             '--output_full_ground_state',
             type=lambda x: bool(strtobool(x)),
