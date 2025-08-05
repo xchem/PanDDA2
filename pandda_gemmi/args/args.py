@@ -661,7 +661,7 @@ class PanDDAKWArgs:
             '--process_all',
             type=lambda x: bool(strtobool(x)),
             default=False,
-            help='Process even bad models. VERY LARGE.',
+            help='Process even bad models. Helpful for discovering heterogeneity. VERY LARGE.',
         )
         parser.add_argument(
             '--output_full_ground_state',
@@ -797,6 +797,7 @@ class PanDDAArgs(PanDDAKWArgs, PanDDAPArgs):
             cif_strategy=args.cif_strategy,
             rank_method=args.rank_method,
             source_pandda=args.source_pandda,
+            process_all=args.process_all,
             debug=args.debug,
         )
 
@@ -925,5 +926,6 @@ class PanDDAProcessDatasetArgs(PanDDAKWArgs, PanDDAProcessDatasetPArgs):
             cif_strategy=args.cif_strategy,
             rank_method=args.rank_method,
             source_pandda=args.source_pandda,
+            process_all=args.process_all,
             debug=args.debug,
         )

@@ -105,7 +105,7 @@ def process_dataset(
         dataset_refs,
         structure_array_refs,
         score_build_ref,
-process_all=False
+    process_all=False
 ):
     pandda_events = {}
     autobuilds = {}
