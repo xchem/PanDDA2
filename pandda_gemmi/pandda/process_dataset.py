@@ -198,6 +198,11 @@ def process_dataset(
     ]
     transforms_ref = processor.put(transforms)
 
+    post_transforms = [
+        RealSpaceSmoothReflections(dataset)
+    ]
+    post_transforms_ref = processor.put(post_transforms)
+
     # Load the locally aligned density maps and construct an array of them
     time_begin_get_dmaps = time.time()
     dmaps_dict = processor.process_dict(

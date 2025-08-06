@@ -299,12 +299,16 @@ def truncate_resolution(reflections, resolution: float):
 
 def common_reflections(datasets: Dict[str, DatasetInterface], tol=0.000001):
     # running_index: Optional[pd.Index] = None
-
     hkl_arrays = [
-            np.array(datasets[dtag].reflections.reflections, copy=False)[:,0:3].astype(int)
-            for dtag
-            in datasets
-        ]
+        np.array(datasets[dtag].reflections.reflections, copy=False)[:, 0:3].astype(int)
+        for dtag
+        in datasets
+    ]
+    return common_reflections_from_arrays(hkl_arrays)
+
+
+def common_reflections_from_arrays(hkl_arrays):
+
 
     hkls = np.vstack(
         hkl_arrays
@@ -324,7 +328,7 @@ def common_reflections(datasets: Dict[str, DatasetInterface], tol=0.000001):
 
     # unique_rows, counts = np.unique(structured_data_array, return_counts=True)
     # common_rows = unique_rows[counts == len(datasets)]
-    common_rows = np.argwhere(data_array_3d == len(datasets)) + min_coord.reshape((1,3))
+    common_rows = np.argwhere(data_array_3d == len(hkl_arrays)) + min_coord.reshape((1,3))
     return common_rows
 
     # for dtag in datasets:

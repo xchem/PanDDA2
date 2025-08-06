@@ -3,7 +3,7 @@ import time
 from ..interfaces import *
 
 from ..dataset import Reflections, XRayDataset
-from .truncate_reflections import truncate_reflections, common_reflections
+from .truncate_reflections import truncate_reflections, common_reflections, common_reflections_from_arrays
 
 import numpy as np
 import pandas as pd
@@ -11,6 +11,16 @@ import gemmi
 from sklearn import neighbors
 from scipy import optimize
 from matplotlib import pyplot as plt
+
+def make_mtz(sf, data):
+    mtz = gemmi.Mtz(with_base=True)
+    mtz.spacegroup = sf.spacegroup
+    mtz.set_cell_for_all(sf.unit_cell)
+    mtz.add_dataset('unknown')
+    mtz.add_column('FWT', 'F')
+    mtz.add_column('PHWT', 'P')
+    mtz.set_data(data)
+    return mtz
 
 def get_rmsd(scale, y, r, y_inds, y_inds_unique, x_f):
     y_s = y * np.exp(scale * r)
@@ -360,3 +370,188 @@ class SmoothReflections:
         )
 
         return smoothed_dataset
+
+class RealSpaceSmoothReflections:
+    def __init__(self, dataset: DatasetInterface):
+        self.reference_dataset = dataset
+
+    def __call__(self, moving_grid, dframe, dtag):
+
+        # Get the grid reflection
+        moving_sf = gemmi.transform_map_to_f_phi(moving_grid, half_l=True)
+        moving_data_array = moving_sf.prepare_asu_data(dmin=self.reference_dataset.reflections.resolution())
+
+        # Mask the reference
+        reference_grid = self.reference_dataset.reflections.transform_f_phi_to_map()
+        reference_grid_array = np.array(reference_grid, copy=False,)
+        mask = np.zeros(reference_grid_array.shape)
+        mask[dframe.mask.indicies] = 1.0
+        reference_grid_array[mask < 0.5] = 0.0
+        reference_sf = gemmi.transform_map_to_f_phi(reference_grid, half_l=True)
+        reference_data_array = reference_sf.prepare_asu_data(dmin=self.reference_dataset.reflections.resolution())
+
+        # Make mtzs
+        ref_mtz = make_mtz(reference_sf, reference_data_array)
+        mov_mtz = make_mtz(moving_sf, moving_data_array)
+
+        # # Get common set of reflections
+        common_reflections_set = common_reflections_from_arrays(
+             [
+                 moving_data_array[:, 0:3].astype(int),
+                 reference_data_array[:, 0:3].astype(int)
+             ],
+        )
+
+        # # Truncate
+        reference_reflections, ref_mask_non_zero = truncate_reflections(
+            ref_mtz,
+            common_reflections_set,
+        )
+        dtag_reflections, dtag_mask_non_zero = truncate_reflections(
+            mov_mtz,
+            common_reflections_set,
+        )
+
+        # Refference array
+        reference_reflections_array = np.array(reference_reflections,
+                                               copy=True,
+                                               )
+        reference_reflections_table = pd.DataFrame(reference_reflections_array,
+                                                   columns=reference_reflections.column_labels(),
+                                                   )
+        reference_f_array = reference_reflections_table[self.reference_dataset.reflections.f].to_numpy()
+
+
+        # Dtag array
+        dtag_reflections_array = np.array(dtag_reflections,
+                                          copy=True,
+                                          )
+        dtag_reflections_table = pd.DataFrame(dtag_reflections_array,
+                                              columns=dtag_reflections.column_labels(),
+                                              )
+        dtag_f_array = dtag_reflections_table[mov_mtz.f].to_numpy()
+
+        # Resolution array
+        reference_resolution_array = reference_reflections.make_1_d2_array()
+        dtag_resolution_array = dtag_reflections.make_1_d2_array()
+
+        # Prepare optimisation
+        x = reference_f_array
+        y = dtag_f_array
+
+        r = reference_resolution_array
+
+        # Get the resolution bins
+        sample_grid = np.linspace(np.min(r), np.max(r), 20)
+
+        # Get the array that maps x values to bins
+        x_inds = np.digitize(reference_resolution_array, sample_grid)
+
+        # Get the bin averages
+        populated_bins, counts = np.unique(x_inds, return_counts=True)
+        x_f = np.array([np.mean(x[x_inds == rb]) for rb in populated_bins[1:-2]])
+
+        y_inds = np.digitize(dtag_resolution_array, sample_grid)
+
+
+        # Optimise the scale factor
+        try:
+            min_scale = optimize.minimize(
+                lambda _scale: get_rmsd(_scale, y, r, y_inds, populated_bins, x_f),
+                0.0,
+                bounds=((-15.0, 15.0),),
+                tol=0.1
+            ).x
+        except Exception as e:
+            print("######## Ref hkl")
+            data_array_ref = np.array(reference_reflections, copy=False)
+            data_hkl_ref = data_array_ref[:, 0:3].astype(int)
+            print(data_hkl_ref)
+            print(data_hkl_ref.shape)
+            print("######## dtag hkl")
+            data_array_dtag = np.array(dtag_reflections, copy=False)
+            data_hkl_dtag = data_array_dtag[:, 0:3].astype(int)
+            print(data_hkl_dtag)
+            print(data_hkl_dtag.shape)
+            print("######## Ref mask non zero")
+            print(ref_mask_non_zero)
+            print("######## dtag mask non zero")
+            print(dtag_mask_non_zero)
+            print("######## Reference f array / x")
+            print(reference_f_array)
+            print(reference_f_array.size)
+            print("######## dtag f array / y")
+            print(dtag_f_array)
+            print(dtag_f_array.size)
+            print("######## reference_resolution_array / r")
+            print(reference_resolution_array)
+            print(reference_resolution_array.size)
+            print("######## Dtag resolution array")
+            print(dtag_resolution_array)
+            print(dtag_resolution_array.size)
+            print("######## y inds")
+            print(y_inds)
+            print(y_inds.size)
+            print("######## x_f")
+            print(x_f)
+            print(x_f.size)
+            print(f"differing_rows")
+            unique_rows, count = np.unique(np.vstack([data_hkl_dtag, data_hkl_ref]), axis=0, return_counts=True)
+            differing_rows = unique_rows[count == 1]
+            print(differing_rows)
+            print(f"######## Common Reflections")
+            print(common_reflections_set)
+            print(f"######## dtag differing_rows with common set")
+            unique_rows, count = np.unique(np.vstack([data_hkl_dtag, common_reflections_set]), axis=0, return_counts=True)
+            differing_rows = unique_rows[count == 1]
+            print(differing_rows)
+            print(f"######## Reference differing_rows with common set")
+            unique_rows, count = np.unique(np.vstack([data_hkl_ref, common_reflections_set]), axis=0, return_counts=True)
+            differing_rows = unique_rows[count == 1]
+            print(differing_rows)
+
+            raise Exception
+
+        original_reflections = mov_mtz.reflections.reflections
+
+        original_reflections_array = np.array(original_reflections,
+                                              copy=True,
+                                              )
+
+        original_reflections_table = pd.DataFrame(original_reflections_array,
+                                                  columns=dtag_reflections.column_labels(),
+                                                  )
+
+        f_array = original_reflections_table[mov_mtz.f].array
+
+        f_scaled_array = f_array * np.exp(min_scale * original_reflections.make_1_d2_array())
+
+        original_reflections_table[mov_mtz.f] = f_scaled_array
+
+        # New reflections
+        new_reflections = gemmi.Mtz(with_base=False)
+
+        # Set dataset properties
+        new_reflections.spacegroup = original_reflections.spacegroup
+        new_reflections.set_cell_for_all(original_reflections.cell)
+
+        # Add dataset
+        new_reflections.add_dataset("scaled")
+
+        # Add columns
+        for column in original_reflections.columns:
+            new_reflections.add_column(column.label, column.type)
+
+        # Update
+        new_reflections.set_data(original_reflections_table.to_numpy().astype(np.float32))
+
+        # Update resolution
+        new_reflections.update_reso()
+
+
+
+        reflections_diff = original_reflections_table[mov_mtz.f].array - f_array
+        print(f'{dtag}: Estimated Min scale {round(min_scale,2)}. {reflections_diff}')
+
+        return Reflections(None, 'FWT', 'PHWT', new_reflections).transform_f_phi_to_map()
+
