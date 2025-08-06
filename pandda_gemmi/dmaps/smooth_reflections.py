@@ -551,7 +551,7 @@ class RealSpaceSmoothReflections:
 
         reflections_diff = np.sort(original_reflections_table['FWT'].array - f_array)
         if self.debug:
-            print(f'rescale {dtag}: Estimated Min scale {round(float(min_scale),2)}. {np.array(moving_grid).shape} {np.array(Reflections(None, "FWT", "PHWT", new_reflections).transform_f_phi_to_map()).shape} {reflections_diff}' )
+            print(f'rescale {dtag}: Estimated Min scale {round(float(min_scale),2)}. {np.array(moving_grid).shape} {np.array(Reflections(None, "FWT", "PHWT", new_reflections).transform_f_phi_to_map()).shape} {np.max(reflections_diff)}' )
 
 
         return Reflections(None, 'FWT', 'PHWT', new_reflections).transform_f_phi_to_map()
