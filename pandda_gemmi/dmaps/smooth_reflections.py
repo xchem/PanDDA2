@@ -1,3 +1,4 @@
+import os
 import time
 
 from ..interfaces import *
@@ -376,8 +377,9 @@ class SmoothReflections:
         return smoothed_dataset
 
 class RealSpaceSmoothReflections:
-    def __init__(self, dataset: DatasetInterface, debug=False):
+    def __init__(self, dataset: DatasetInterface, fs=None, debug=False):
         self.reference_dataset = dataset
+        self.fs = fs
         self.debug = debug
 
     def __call__(self, moving_grid, dframe, dtag):
@@ -557,6 +559,15 @@ class RealSpaceSmoothReflections:
         if self.debug:
             print(f'rescale {dtag}: Estimated Min scale {round(float(min_scale),2)}. {np.array(moving_grid).shape} {np.array(Reflections(None, "FWT", "PHWT", new_reflections).transform_f_phi_to_map()).shape} {np.max(reflections_diff)}' )
 
+            scatter_dir = self.fs.output.processed_datasets[dtag] / 'ref_amp_scatters'
+            if not scatter_dir.exists():
+                os.mkdir(scatter_dir)
+            scatter_path = scatter_dir / f'{dtag}.png'
+            fig, ax = plt.subplots()
+            im = ax.scatter(x=original_reflections_table['FWT'].array, y=f_array,)
+            ax.get_xaxis().set_ticks([])
+            ax.get_yaxis().set_ticks([])
+            plt.savefig(scatter_path)
 
         return Reflections(None, 'FWT', 'PHWT', new_reflections).transform_f_phi_to_map()
 
