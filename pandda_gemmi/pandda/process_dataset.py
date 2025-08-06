@@ -26,6 +26,7 @@ from pandda_gemmi.dmaps import (
     SparseDMapStream,
     TruncateReflections,
     SmoothReflections,
+    RealSpaceSmoothReflections
 )
 from pandda_gemmi.alignment import Alignment, DFrame
 from pandda_gemmi.processor import ProcessLocalRay, Partial
