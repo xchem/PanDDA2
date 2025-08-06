@@ -212,6 +212,7 @@ def process_dataset(
                 dataset_refs[_dtag],
                 alignment_refs[_dtag],
                 transforms_ref,
+                post_transforms_ref,
                 reference_frame_ref,
                 args.debug
             )
