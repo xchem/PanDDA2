@@ -523,11 +523,11 @@ class RealSpaceSmoothReflections:
                                                   columns=dtag_reflections.column_labels(),
                                                   )
 
-        f_array = original_reflections_table[mov_mtz.f].array
+        f_array = original_reflections_table['FWT'].array
 
         f_scaled_array = f_array * np.exp(min_scale * original_reflections.make_1_d2_array())
 
-        original_reflections_table[mov_mtz.f] = f_scaled_array
+        original_reflections_table['FWT'] = f_scaled_array
 
         # New reflections
         new_reflections = gemmi.Mtz(with_base=False)
