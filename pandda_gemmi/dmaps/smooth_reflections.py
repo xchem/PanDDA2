@@ -372,14 +372,15 @@ class SmoothReflections:
         return smoothed_dataset
 
 class RealSpaceSmoothReflections:
-    def __init__(self, dataset: DatasetInterface):
+    def __init__(self, dataset: DatasetInterface, debug=False):
         self.reference_dataset = dataset
+        self.debug = debug
 
     def __call__(self, moving_grid, dframe, dtag):
 
         # Get the grid reflection
         moving_sf = gemmi.transform_map_to_f_phi(moving_grid, half_l=True)
-        moving_data_array = moving_sf.prepare_asu_data(dmin=self.reference_dataset.reflections.resolution())
+        moving_data = moving_sf.prepare_asu_data(dmin=self.reference_dataset.reflections.resolution())
 
         # Mask the reference
         reference_grid = self.reference_dataset.reflections.transform_f_phi_to_map()
@@ -388,17 +389,17 @@ class RealSpaceSmoothReflections:
         mask[dframe.mask.indicies] = 1.0
         reference_grid_array[mask < 0.5] = 0.0
         reference_sf = gemmi.transform_map_to_f_phi(reference_grid, half_l=True)
-        reference_data_array = reference_sf.prepare_asu_data(dmin=self.reference_dataset.reflections.resolution())
+        reference_data = reference_sf.prepare_asu_data(dmin=self.reference_dataset.reflections.resolution())
 
         # Make mtzs
-        ref_mtz = make_mtz(reference_sf, reference_data_array)
-        mov_mtz = make_mtz(moving_sf, moving_data_array)
+        ref_mtz = make_mtz(reference_sf, reference_data)
+        mov_mtz = make_mtz(moving_sf, moving_data)
 
         # # Get common set of reflections
         common_reflections_set = common_reflections_from_arrays(
              [
-                 moving_data_array[:, 0:3].astype(int),
-                 reference_data_array[:, 0:3].astype(int)
+                 np.array(mov_mtz, copy=False)[:, 0:3].astype(int),
+                 np.array(ref_mtz, copy=False)[:, 0:3].astype(int)
              ],
         )
 
@@ -551,7 +552,8 @@ class RealSpaceSmoothReflections:
 
 
         reflections_diff = original_reflections_table[mov_mtz.f].array - f_array
-        print(f'{dtag}: Estimated Min scale {round(min_scale,2)}. {reflections_diff}')
+        if self.debug:
+            print(f'{dtag}: Estimated Min scale {round(min_scale,2)}. {reflections_diff}')
 
         return Reflections(None, 'FWT', 'PHWT', new_reflections).transform_f_phi_to_map()
 
