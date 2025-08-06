@@ -420,7 +420,7 @@ class RealSpaceSmoothReflections:
         reference_reflections_table = pd.DataFrame(reference_reflections_array,
                                                    columns=reference_reflections.column_labels(),
                                                    )
-        reference_f_array = reference_reflections_table[self.reference_dataset.reflections.f].to_numpy()
+        reference_f_array = reference_reflections_table['FWT'].to_numpy()
 
 
         # Dtag array
@@ -430,7 +430,7 @@ class RealSpaceSmoothReflections:
         dtag_reflections_table = pd.DataFrame(dtag_reflections_array,
                                               columns=dtag_reflections.column_labels(),
                                               )
-        dtag_f_array = dtag_reflections_table[mov_mtz.f].to_numpy()
+        dtag_f_array = dtag_reflections_table['FWT'].to_numpy()
 
         # Resolution array
         reference_resolution_array = reference_reflections.make_1_d2_array()
