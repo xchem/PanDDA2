@@ -206,6 +206,9 @@ def process_dataset(
 
     # Load the locally aligned density maps and construct an array of them
     time_begin_get_dmaps = time.time()
+    print('Datasets to transform')
+    print(sorted([_dtag for _dtag in comparator_datasets]))
+    print(sorted([_dtag for _dtag in dataset_refs]))
     dmaps_dict = processor.process_dict(
         {
             _dtag: Partial(SparseDMapStream.parallel_load).paramaterise(
