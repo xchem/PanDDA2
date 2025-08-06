@@ -513,7 +513,7 @@ class RealSpaceSmoothReflections:
 
             raise Exception
 
-        original_reflections = mov_mtz.reflections.reflections
+        original_reflections = mov_mtz
 
         original_reflections_array = np.array(original_reflections,
                                               copy=True,
