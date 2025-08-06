@@ -1,3 +1,6 @@
+import os
+os.environ["RAY_DEDUP_LOGS"] = 0
+
 import time
 
 try:
