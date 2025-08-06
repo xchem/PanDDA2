@@ -549,7 +549,7 @@ class RealSpaceSmoothReflections:
         # Update resolution
         new_reflections.update_reso()
 
-        reflections_diff = original_reflections_table[mov_mtz.f].array - f_array
+        reflections_diff = original_reflections_table['FWT'].array - f_array
         if self.debug:
             print(f'{dtag}: Estimated Min scale {round(min_scale,2)}. {np.array(moving_grid).shape} {np.array(Reflections(None, "FWT", "PHWT", new_reflections).transform_f_phi_to_map()).shape} {reflections_diff}' )
 
