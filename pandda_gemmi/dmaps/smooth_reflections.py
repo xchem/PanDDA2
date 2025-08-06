@@ -243,7 +243,9 @@ class SmoothReflections:
             Reflections(dataset.reflections.path,
                         dataset.reflections.f,
                         dataset.reflections.phi,
-                        new_reflections),
+                        new_reflections,
+                        name=dataset.name,
+                        ),
             dataset.ligand_files
         )
 
@@ -366,7 +368,8 @@ class SmoothReflections:
                         dataset.reflections.f,
                         dataset.reflections.phi,
                         new_reflections),
-            dataset.ligand_files
+            dataset.ligand_files,
+            name=dataset.name
         )
 
         return smoothed_dataset

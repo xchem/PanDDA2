@@ -394,7 +394,8 @@ class TruncateReflections:
         new_dataset = XRayDataset(
             dataset.structure,
             new_reflections,
-            dataset.ligand_files
+            dataset.ligand_files,
+            name=dataset.name
         )
         finish_truncate_reflections = time.time()
         # print(f"\t\tTruncate: {finish_truncate_reflections-begin_truncate_reflections}")
