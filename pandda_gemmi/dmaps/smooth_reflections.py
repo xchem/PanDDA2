@@ -563,9 +563,18 @@ class RealSpaceSmoothReflections:
             print(scatter_dir)
             if not scatter_dir.exists():
                 os.mkdir(scatter_dir)
-            scatter_path = scatter_dir / f'{dtag}.png'
+
+            scatter_path = scatter_dir / f'{dtag}_new_vs_original.png'
             fig, ax = plt.subplots()
             im = ax.scatter(x=original_reflections_table['FWT'].array, y=f_array,)
+            ax.get_xaxis().set_ticks([])
+            ax.get_yaxis().set_ticks([])
+            plt.savefig(scatter_path)
+            plt.close()
+
+            scatter_path = scatter_dir / f'{dtag}_new_vs_ref.png'
+            fig, ax = plt.subplots()
+            im = ax.scatter(x=original_reflections_table['FWT'].array, y=f_array, )
             ax.get_xaxis().set_ticks([])
             ax.get_yaxis().set_ticks([])
             plt.savefig(scatter_path)
