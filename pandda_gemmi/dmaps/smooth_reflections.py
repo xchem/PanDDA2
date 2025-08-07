@@ -390,6 +390,7 @@ class RealSpaceSmoothReflections:
 
         # Mask the reference
         reference_grid = self.reference_dataset.reflections.transform_f_phi_to_map()
+        reference_grid.spacegroup = gemmi.spacegroup = gemmi.find_spacegroup_by_name("P 1")
         reference_grid_array = np.array(reference_grid, copy=False,)
         mask = np.zeros(reference_grid_array.shape)
         mask[dframe.mask.indicies] = 1.0
