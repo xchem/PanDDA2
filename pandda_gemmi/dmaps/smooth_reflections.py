@@ -398,6 +398,8 @@ class RealSpaceSmoothReflections:
         reference_data = reference_sf.prepare_asu_data(dmin=self.reference_dataset.reflections.resolution())
 
         # Make mtzs
+        if self.debug:
+            print(f'{dtag} ref grid shape: {np.array(reference_grid).shape} mov grid shape {np.array(moving_grid).shape}')
         ref_mtz = make_mtz(reference_sf, reference_data)
         mov_mtz = make_mtz(moving_sf, moving_data)
 
