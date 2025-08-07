@@ -471,7 +471,7 @@ class RealSpaceSmoothReflections:
         weighting = counts / np.sum(counts)
 
         if self.debug:
-            print(f'{dtag} weighting: {weighting}')
+            print(f'{dtag} weighting: {weighting} {sample_grid}')
 
 
         # Optimise the scale factor
