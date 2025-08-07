@@ -137,7 +137,7 @@ def process_dataset(
             FilterRFree(args.max_rfree),
             FilterSpaceGroup(dataset),
             FilterCompatibleStructures(dataset, debug=args.debug),
-            FilterResolution(dataset_res, args.max_shell_datasets, 500, args.high_res_buffer)],
+            FilterResolution(dataset_res, args.max_shell_datasets, 100, args.high_res_buffer)],
         debug=args.debug
     )
 
