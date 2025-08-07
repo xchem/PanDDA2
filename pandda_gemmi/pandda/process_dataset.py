@@ -200,7 +200,7 @@ def process_dataset(
     transforms_ref = processor.put(transforms)
 
     post_transforms = [
-        RealSpaceSmoothReflections(dataset, debug=args.debug)
+        RealSpaceSmoothReflections(dataset, fs=fs,debug=args.debug)
     ]
     post_transforms_ref = processor.put(post_transforms)
 
