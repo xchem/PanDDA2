@@ -457,7 +457,7 @@ class RealSpaceSmoothReflections:
         r = reference_resolution_array
 
         # Get the resolution bins
-        sample_grid = np.linspace(np.max([np.min(r), 0.1]), np.max(r), 20)
+        sample_grid = np.linspace(np.max([np.min(r), 0.1]), np.min([np.max(r), 0.3]), 20)
 
         # Get the array that maps x values to bins
         x_inds = np.digitize(reference_resolution_array, sample_grid)
@@ -585,8 +585,8 @@ class RealSpaceSmoothReflections:
 
             scatter_path = scatter_dir / f'{dtag}_new_vs_original.png'
             fig, ax = plt.subplots()
-            im = ax.scatter(x=reference_resolution_array, y=f_array, alpha=0.1)
-            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.1)
+            im = ax.scatter(x=reference_resolution_array, y=f_array, alpha=0.01)
+            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.01)
 
 
             # ax.get_xaxis().set_ticks([])
@@ -596,8 +596,8 @@ class RealSpaceSmoothReflections:
 
             scatter_path = scatter_dir / f'{dtag}_new_vs_ref.png'
             fig, ax = plt.subplots()
-            im = ax.scatter(x=reference_resolution_array, y=reference_f_array, alpha=0.1)
-            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.1, )
+            im = ax.scatter(x=reference_resolution_array, y=reference_f_array, alpha=0.01)
+            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.01, )
 
             # ax.get_xaxis().set_ticks([])
             # ax.get_yaxis().set_ticks([])
