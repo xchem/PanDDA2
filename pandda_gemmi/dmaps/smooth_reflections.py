@@ -575,7 +575,10 @@ class RealSpaceSmoothReflections:
 
             scatter_path = scatter_dir / f'{dtag}_new_vs_original.png'
             fig, ax = plt.subplots()
-            im = ax.scatter(x=original_reflections_table['FWT'].array, y=f_array,)
+            im = ax.scatter(x=reference_resolution_array, y=f_array,)
+            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array,)
+
+
             # ax.get_xaxis().set_ticks([])
             # ax.get_yaxis().set_ticks([])
             plt.savefig(scatter_path)
@@ -583,7 +586,9 @@ class RealSpaceSmoothReflections:
 
             scatter_path = scatter_dir / f'{dtag}_new_vs_ref.png'
             fig, ax = plt.subplots()
-            im = ax.scatter(x=original_reflections_table['FWT'].array, y=reference_f_array, )
+            im = ax.scatter(x=reference_resolution_array, y=reference_f_array, )
+            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, )
+
             # ax.get_xaxis().set_ticks([])
             # ax.get_yaxis().set_ticks([])
             plt.savefig(scatter_path)
