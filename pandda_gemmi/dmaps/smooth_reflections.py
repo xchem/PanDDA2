@@ -28,7 +28,7 @@ def get_rmsd(scale, y, r, y_inds, y_inds_unique, x_f, weighting=1):
 
     y_f = np.array([np.mean(y_s[y_inds == rb]) for rb in y_inds_unique[1:-2]])
 
-    _rmsd = np.sum(np.abs(x_f - y_f)*weighting)
+    _rmsd = np.sum(np.abs(x_f - y_f)*weighting[1:-2])
     return _rmsd
 
 def get_rmsd_real_space(scale, reference_values, y, r, grid_mask, original_reflections, exact_size):
@@ -462,7 +462,7 @@ class RealSpaceSmoothReflections:
         # Get the array that maps x values to bins
         x_inds = np.digitize(reference_resolution_array, sample_grid)
 
-        # Get the bin averages
+        # Get the reference bin averages
         populated_bins, counts = np.unique(x_inds, return_counts=True)
         x_f = np.array([np.mean(x[x_inds == rb]) for rb in populated_bins[1:-2]])
 
