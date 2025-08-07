@@ -561,6 +561,7 @@ class RealSpaceSmoothReflections:
 
             scatter_dir = self.fs.output.processed_datasets[self.reference_dataset.name] / 'ref_amp_scatters'
             print(scatter_dir)
+            print(f'{dtag} ref sizes: {original_reflections_table["FWT"].array.shape} {reference_f_array.shape}')
             if not scatter_dir.exists():
                 os.mkdir(scatter_dir)
 
