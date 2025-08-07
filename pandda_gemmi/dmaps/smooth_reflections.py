@@ -457,7 +457,7 @@ class RealSpaceSmoothReflections:
         r = reference_resolution_array
 
         # Get the resolution bins
-        sample_grid = np.linspace(np.min(r), np.max(r), 20)
+        sample_grid = np.linspace(np.max([np.min(r), 0.1]), np.max(r), 20)
 
         # Get the array that maps x values to bins
         x_inds = np.digitize(reference_resolution_array, sample_grid)
