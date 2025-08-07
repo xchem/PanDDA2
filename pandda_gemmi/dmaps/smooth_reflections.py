@@ -560,6 +560,7 @@ class RealSpaceSmoothReflections:
             print(f'rescale {dtag}: Estimated Min scale {round(float(min_scale),2)}. {np.array(moving_grid).shape} {np.array(Reflections(None, "FWT", "PHWT", new_reflections).transform_f_phi_to_map()).shape} {np.max(reflections_diff)}' )
 
             scatter_dir = self.fs.output.processed_datasets[self.reference_dataset.name] / 'ref_amp_scatters'
+            print(scatter_dir)
             if not scatter_dir.exists():
                 os.mkdir(scatter_dir)
             scatter_path = scatter_dir / f'{dtag}.png'
