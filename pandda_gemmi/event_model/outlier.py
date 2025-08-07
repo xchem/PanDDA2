@@ -18,6 +18,7 @@ class PointwiseMAD:
                  ):
         mean = np.median(characterization_set_dmaps_array, axis=0)
         std = np.median(np.abs(characterization_set_dmaps_array-mean), axis=0) / 0.6745
-        std[std < std_floor] = std_floor
+        if characterization_set_dmaps_array.shape[0] <20:
+            std[std < std_floor] = std_floor
         z = ((dataset_dmap_array - mean) / std)
         return mean, std, z
