@@ -587,7 +587,7 @@ class RealSpaceSmoothReflections:
             fig, ax = plt.subplots()
             im = ax.scatter(x=reference_resolution_array, y=f_array, alpha=0.01)
             im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.01)
-
+            plt.close()
 
             # ax.get_xaxis().set_ticks([])
             # ax.get_yaxis().set_ticks([])
