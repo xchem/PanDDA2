@@ -476,17 +476,17 @@ class RealSpaceSmoothReflections:
 
         # Optimise the scale factor
         try:
-            # min_scale = optimize.minimize(
-            #     lambda _scale: get_rmsd(_scale, y, r, y_inds, populated_bins, x_f, weighting=weighting[1:-2]),
-            #     0.0,
-            #     bounds=((-15.0, 15.0),),
-            #     tol=0.1
-            # ).x
-            min_scale = optimize.differential_evolution(
+            min_scale = optimize.minimize(
                 lambda _scale: get_rmsd(_scale, y, r, y_inds, populated_bins, x_f, weighting=weighting[1:-2]),
+                0.0,
                 bounds=((-15.0, 15.0),),
                 tol=0.1
             ).x
+            # min_scale = optimize.differential_evolution(
+            #     lambda _scale: get_rmsd(_scale, y, r, y_inds, populated_bins, x_f, weighting=weighting[1:-2]),
+            #     bounds=((-15.0, 15.0),),
+            #     tol=0.1
+            # ).x
         except Exception as e:
             print("######## Ref hkl")
             data_array_ref = np.array(reference_reflections, copy=False)
