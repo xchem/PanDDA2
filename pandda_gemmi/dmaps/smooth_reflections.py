@@ -411,7 +411,7 @@ class RealSpaceSmoothReflections:
              ],
         )
         if self.debug:
-            print(f'{dtag} common set: {common_reflections_set.shape} mov shape {np.array(mov_mtz, copy=False)[:, 0:3].shape} ref shape {np.array(ref_mtz, copy=False)[:, 0:3]}')
+            print(f'{dtag} common set: {common_reflections_set.shape} mov shape {np.array(mov_mtz, copy=False)[:, 0:3].shape} ref shape {np.array(ref_mtz, copy=False)[:, 0:3].shape}')
 
         # # Truncate
         reference_reflections, ref_mask_non_zero = truncate_reflections(
