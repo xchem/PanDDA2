@@ -28,7 +28,7 @@ def get_rmsd(scale, y, r, y_inds, y_inds_unique, x_f, weighting=1):
 
     y_f = np.array([np.mean(y_s[y_inds == rb]) for rb in y_inds_unique[1:-2]])
 
-    _rmsd = np.sum(np.abs(x_f - y_f)*weighting[1:-2])
+    _rmsd = np.sum(np.abs(x_f - y_f)*weighting)
     return _rmsd
 
 def get_rmsd_real_space(scale, reference_values, y, r, grid_mask, original_reflections, exact_size):
@@ -477,7 +477,7 @@ class RealSpaceSmoothReflections:
         # Optimise the scale factor
         try:
             min_scale = optimize.minimize(
-                lambda _scale: get_rmsd(_scale, y, r, y_inds, populated_bins, x_f, weighting=weighting),
+                lambda _scale: get_rmsd(_scale, y, r, y_inds, populated_bins, x_f, weighting=weighting[1:-2]),
                 0.0,
                 bounds=((-15.0, 15.0),),
                 tol=0.1
