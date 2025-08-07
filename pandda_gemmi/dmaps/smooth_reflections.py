@@ -439,6 +439,9 @@ class RealSpaceSmoothReflections:
                                               columns=dtag_reflections.column_labels(),
                                               )
         dtag_f_array = dtag_reflections_table['FWT'].to_numpy()
+        if self.debug:
+            print(f'{dtag} ref f shape: {reference_f_array.shape} mov f shape {dtag_f_array.shape}')
+
 
         # Resolution array
         reference_resolution_array = reference_reflections.make_1_d2_array()
