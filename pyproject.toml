@@ -15,7 +15,7 @@ dependencies = [
     "scipy",
     "joblib",
     "scikit-learn",
-#    "umap-learn",
+    "umap-learn",
     "hdbscan",
     "matplotlib",
     "rich",
