@@ -3,12 +3,12 @@ os.environ["RAY_DEDUP_LOGS"] = "0"
 
 import time
 
-try:
-    from sklearnex import patch_sklearn
+# try:
+#     from sklearnex import patch_sklearn
 
-    patch_sklearn()
-except ImportError:
-    print('No sklearn-express available!')
+#     patch_sklearn()
+# except ImportError:
+#     print('No sklearn-express available!')
 
 print('Importing interfaces...')
 from pandda_gemmi.interfaces import *
