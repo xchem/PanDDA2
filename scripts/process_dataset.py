@@ -20,7 +20,7 @@ from pandda_gemmi.args import PanDDAProcessDatasetArgs
 from pandda_gemmi.pandda.process_model import ProcessModel
 from pandda_gemmi.pandda.process_dataset import process_dataset
 
-print(__name__)
+print(f'Name: {__name__}')
 
 if __name__ == '__main__':
     # Parse Command Line Arguments
