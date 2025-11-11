@@ -10,14 +10,23 @@ try:
 except ImportError:
     print('No sklearn-express available!')
 
+print('Importing interfaces...')
 from pandda_gemmi.interfaces import *
+print('Importing structure array...')
 from pandda_gemmi.dataset import StructureArray
+print('Importing ray...')
 from pandda_gemmi.processor import ProcessLocalRay
+print('Importing pandda console...')
 from pandda_gemmi.pandda_logging import PanDDAConsole
+print('Importing prerun...')
 from pandda_gemmi.pandda.prerun import prerun
+print('Importing scoring models...')
 from pandda_gemmi.pandda.get_scoring_models import get_scoring_models
+print('Importing args...')
 from pandda_gemmi.args import PanDDAProcessDatasetArgs
+print('Importing process model...')
 from pandda_gemmi.pandda.process_model import ProcessModel
+print('Importing process dataset...')
 from pandda_gemmi.pandda.process_dataset import process_dataset
 
 print(f'Name: {__name__}')
