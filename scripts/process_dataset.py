@@ -23,6 +23,7 @@ from pandda_gemmi.pandda.process_dataset import process_dataset
 if __name__ == '__main__':
     # Parse Command Line Arguments
     args = PanDDAProcessDatasetArgs.from_command_line()
+    print(f'Dataset to process is: {args.dtag}')
 
     # Create the console to print output throughout the programs run
     console = PanDDAConsole()
@@ -59,6 +60,8 @@ if __name__ == '__main__':
     if args.dtag in datasets_to_process:
         j = [_dtag for _dtag in datasets_to_process].index(args.dtag)
     else:
+        print(f'Dataset {args.dtag} not in datasets to process. Exiting.')
+        print(f'Dataset to process: {datasets_to_process}')
         exit()
     time_begin_process_datasets = time.time()
     process_dataset(
