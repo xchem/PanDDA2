@@ -38,6 +38,7 @@ class PanDDAKWArgs:
     sample_rate: float = 3.0
     max_rmsd_to_reference: float = 1.5
     max_rfree: float = 0.4
+    use_rwork: float = False
     dataset_range: str = "0-99999"
     max_wilson_plot_z_score: float = 1.5
     same_space_group_only: bool = False
@@ -312,6 +313,12 @@ class PanDDAKWArgs:
             type=float,
             default=0.4,
             help=constants.ARGS_MAX_RFREE_HELP,
+        )
+        parser.add_argument(
+            constants.ARGS_USE_RFREE,
+            type=lambda x: bool(strtobool(x)),
+            default=False,
+            help=constants.ARGS_USE_RFREE_HELP,
         )
         parser.add_argument(
             constants.ARGS_DATASET_RANGE,
@@ -743,6 +750,7 @@ class PanDDAArgs(PanDDAKWArgs, PanDDAPArgs):
             sample_rate=args.sample_rate,
             max_rmsd_to_reference=args.max_rmsd_to_reference,
             max_rfree=args.max_rfree,
+            use_rwork=args.use_rwork,
             dataset_range=args.dataset_range,
             max_wilson_plot_z_score=args.max_wilson_plot_z_score,
             same_space_group_only=args.same_space_group_only,

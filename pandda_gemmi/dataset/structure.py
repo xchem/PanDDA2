@@ -135,8 +135,10 @@ class Structure(StructureInterface):
             return 0.0
 
     def rwork(self):
-        return float(self.structure.make_mmcif_document()[0].find_loop("_refine.ls_R_factor_R_work")[0])
-
+        try:
+            return float(self.structure.make_mmcif_document()[0].find_loop("_refine.ls_R_factor_R_work")[0])
+        except:
+            return 0.0
 
 class StructureArray(StructureArrayInterface):
     def __init__(self, models, chains, seq_ids, insertions, atom_ids, positions):

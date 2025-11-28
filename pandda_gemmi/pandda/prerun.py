@@ -78,7 +78,7 @@ def prerun(args, console, processor):
 
     # Get the datasets to process
     dataset_filters = [
-        FilterRFree(args.max_rfree),
+        FilterRFree(args.max_rfree, args.use_rwork),
         FilterResolutionLowerLimit(args.high_res_lower_limit),
         FilterRange(args.dataset_range),
         FilterExcludeFromAnalysis(args.exclude_from_z_map_analysis),
