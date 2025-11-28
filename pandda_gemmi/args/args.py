@@ -315,10 +315,10 @@ class PanDDAKWArgs:
             help=constants.ARGS_MAX_RFREE_HELP,
         )
         parser.add_argument(
-            constants.ARGS_USE_RFREE,
+            constants.ARGS_USE_RWORK,
             type=lambda x: bool(strtobool(x)),
             default=False,
-            help=constants.ARGS_USE_RFREE_HELP,
+            help=constants.ARGS_USE_RWORK_HELP,
         )
         parser.add_argument(
             constants.ARGS_DATASET_RANGE,
