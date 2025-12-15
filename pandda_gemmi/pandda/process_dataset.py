@@ -183,7 +183,7 @@ def process_dataset(
 
     # Get the reference frame and save it to the object store
     time_begin_get_frame = time.time()
-    reference_frame: DFrame = DFrame(dataset, processor)
+    reference_frame: DFrame = DFrame(dataset, processor, debug=args.debug)
     reference_frame_ref = processor.put(reference_frame)
     time_finish_get_frame = time.time()
     # TODO: Log properly

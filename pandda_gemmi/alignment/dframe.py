@@ -922,7 +922,7 @@ class GridPartitioning(GridPartitioningInterface):
         return cls(partitions, ), all_indicies_updated # all_indicies_updated
 
     @classmethod
-    def from_dataset(cls, dataset, grid, processor):
+    def from_dataset(cls, dataset, grid, processor, debug=False):
         # Get the structure array
         st_array = StructureArray.from_structure(dataset.structure)
 
@@ -1062,6 +1062,13 @@ class GridPartitioning(GridPartitioningInterface):
             np.mod(updated_outer_indicies[1] + min_pos[1], grid.nv),
             np.mod(updated_outer_indicies[2] + min_pos[2], grid.nw),
         )
+        if debug:
+            indicies = all_indicies_updated["outer"]
+            x, y, z = indicies[0], indicies[1], indicies[2]
+            mask_range = ((np.min(x), np.max(x)), (np.min(y), np.max(y)), (np.min(z), np.max(z)))
+            xmap_array_shape = (grid.nu, grid.nv, grid.nw)
+            print(f'Xmap array shape: {xmap_array_shape} vs mask range: {mask_range}')
+            exit()
         # print(f"Outer indicies ranges:")
         # print(f"U range: {np.min(all_indicies_updated['outer'][0])} : {np.max(all_indicies_updated['outer'][0])}")
         # print(f"V range: {np.min(all_indicies_updated['outer'][1])} : {np.max(all_indicies_updated['outer'][1])}")
@@ -1237,7 +1244,7 @@ def get_grid_from_dataset(dataset: DatasetInterface):
 
 
 class DFrame:
-    def __init__(self, dataset: DatasetInterface, processor):
+    def __init__(self, dataset: DatasetInterface, processor, debug=False):
         # Get the grid
         grid = get_grid_from_dataset(dataset)
 
@@ -1249,7 +1256,7 @@ class DFrame:
 
         # Get the grid partitioning
         begin_partition = time.time()
-        self.partitioning, all_indicies = GridPartitioning.from_dataset(dataset, grid, processor)
+        self.partitioning, all_indicies = GridPartitioning.from_dataset(dataset, grid, processor, debug=debug)
         finish_partition = time.time()
         # print(f"\tGot Partitions in {finish_partition - begin_partition}")
 
