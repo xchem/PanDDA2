@@ -47,6 +47,10 @@ class SparseDMapStream:
 
         begin = time.time()
 
+        if debug:
+            original_xmap = dataset.reflections.transform_f_phi_to_map(sample_rate=dataset.reflections.resolution()/0.4999)
+            original_xmap_size = (original_xmap.nu, original_xmap.nv, original_xmap.nw)
+
         begin_transform = time.time()
         for transform in transforms:
             dataset = transform(dataset)
@@ -60,6 +64,9 @@ class SparseDMapStream:
             # print(np.array(dataset.reflections.reflections))
             arr = np.array(xmap)
             print(f'{dataset.name} raw xmap stats: min {np.min(arr)} max {np.max(arr)} mean {np.mean(arr)}')
+            new_xmap_size = (xmap.nu, xmap.nv, xmap.nw)
+            print(f'Pre transform size: {original_xmap_size} vs new size: {new_xmap_size}')
+
 
         finish_fft = time.time()
         # print(f"\tFFT: {finish_fft - begin_fft}")
