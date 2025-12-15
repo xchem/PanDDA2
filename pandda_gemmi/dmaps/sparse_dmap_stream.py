@@ -73,7 +73,7 @@ class SparseDMapStream:
         finish = time.time()
         # print(f"Aligned xmap in: {round(finish-begin, 2)}")
 
-        return SparseDMap.from_xmap(transformed_xmap, dframe)
+        return SparseDMap.from_xmap(transformed_xmap, dframe, debug=debug)
 
     def array_load(self, ):
         # Get the shape to load datasets into
