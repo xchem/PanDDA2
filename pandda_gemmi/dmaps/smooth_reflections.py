@@ -605,5 +605,5 @@ class RealSpaceSmoothReflections:
         #     plt.savefig(scatter_path)
         #     plt.close()
 
-        return Reflections(None, 'FWT', 'PHWT', new_reflections).transform_f_phi_to_map()
+        return Reflections(None, 'FWT', 'PHWT', new_reflections).transform_f_phi_to_map(exact_size=np.array(reference_grid).shape)
 

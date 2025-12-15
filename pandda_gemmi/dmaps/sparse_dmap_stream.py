@@ -65,7 +65,6 @@ class SparseDMapStream:
             arr = np.array(xmap)
             print(f'{dataset.name} raw xmap stats: min {np.min(arr)} max {np.max(arr)} mean {np.mean(arr)}')
             new_xmap_size = (xmap.nu, xmap.nv, xmap.nw)
-            print(f'Pre transform size: {original_xmap_size} vs new size: {new_xmap_size}')
 
 
         finish_fft = time.time()
@@ -78,6 +77,11 @@ class SparseDMapStream:
             transformed_xmap = transform(aligned_xmap, dframe, dataset.name)
 
         finish = time.time()
+
+        if debug:
+            transformed_xmap_size = (transformed_xmap.nu, transformed_xmap.nv, transformed_xmap.nw)
+            print(f'Pre transform size: {original_xmap_size} vs transformed size: {new_xmap_size} vs pos-transformed: {transformed_xmap_size}')
+
         # print(f"Aligned xmap in: {round(finish-begin, 2)}")
 
         return SparseDMap.from_xmap(transformed_xmap, dframe, debug=debug)
