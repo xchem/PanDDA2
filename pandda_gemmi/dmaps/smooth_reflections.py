@@ -574,36 +574,36 @@ class RealSpaceSmoothReflections:
         new_reflections.update_reso()
 
         reflections_diff = np.sort(original_reflections_table['FWT'].array - f_array)
-        if self.debug:
-            print(f'rescale {dtag}: Estimated Min scale {round(float(min_scale),2)}. {np.array(moving_grid).shape} {np.array(Reflections(None, "FWT", "PHWT", new_reflections).transform_f_phi_to_map()).shape} {np.max(reflections_diff)}' )
+        # if self.debug:
+        #     print(f'rescale {dtag}: Estimated Min scale {round(float(min_scale),2)}. {np.array(moving_grid).shape} {np.array(Reflections(None, "FWT", "PHWT", new_reflections).transform_f_phi_to_map()).shape} {np.max(reflections_diff)}' )
 
-            scatter_dir = self.fs.output.processed_datasets[self.reference_dataset.name] / 'ref_amp_scatters'
-            print(scatter_dir)
-            print(f'{dtag} ref sizes: {original_reflections_table["FWT"].array.shape} {reference_f_array.shape}')
-            if not scatter_dir.exists():
-                os.mkdir(scatter_dir)
+        #     scatter_dir = self.fs.output.processed_datasets[self.reference_dataset.name] / 'ref_amp_scatters'
+        #     print(scatter_dir)
+        #     print(f'{dtag} ref sizes: {original_reflections_table["FWT"].array.shape} {reference_f_array.shape}')
+        #     if not scatter_dir.exists():
+        #         os.mkdir(scatter_dir)
 
-            scatter_path = scatter_dir / f'{dtag}_new_vs_original.png'
-            fig, ax = plt.subplots()
-            im = ax.scatter(x=reference_resolution_array, y=f_array, alpha=0.01)
-            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.01)
+        #     scatter_path = scatter_dir / f'{dtag}_new_vs_original.png'
+        #     fig, ax = plt.subplots()
+        #     im = ax.scatter(x=reference_resolution_array, y=f_array, alpha=0.01)
+        #     im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.01)
 
-            # ax.get_xaxis().set_ticks([])
-            # ax.get_yaxis().set_ticks([])
-            plt.savefig(scatter_path)
-            plt.close()
-            plt.close()
+        #     # ax.get_xaxis().set_ticks([])
+        #     # ax.get_yaxis().set_ticks([])
+        #     plt.savefig(scatter_path)
+        #     plt.close()
+        #     plt.close()
 
 
-            scatter_path = scatter_dir / f'{dtag}_new_vs_ref.png'
-            fig, ax = plt.subplots()
-            im = ax.scatter(x=reference_resolution_array, y=reference_f_array, alpha=0.01)
-            im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.01, )
+        #     scatter_path = scatter_dir / f'{dtag}_new_vs_ref.png'
+        #     fig, ax = plt.subplots()
+        #     im = ax.scatter(x=reference_resolution_array, y=reference_f_array, alpha=0.01)
+        #     im = ax.scatter(x=reference_resolution_array, y=original_reflections_table['FWT'].array, alpha=0.01, )
 
-            # ax.get_xaxis().set_ticks([])
-            # ax.get_yaxis().set_ticks([])
-            plt.savefig(scatter_path)
-            plt.close()
+        #     # ax.get_xaxis().set_ticks([])
+        #     # ax.get_yaxis().set_ticks([])
+        #     plt.savefig(scatter_path)
+        #     plt.close()
 
         return Reflections(None, 'FWT', 'PHWT', new_reflections).transform_f_phi_to_map()
 
