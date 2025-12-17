@@ -3,8 +3,8 @@
 ## Acknowledgements
 
 ## User Guide
-[User Guide](./docs/debugging.md)
-[EXPERIMENTAL!: Cryo-EM Support](./docs/cryoem.md)
+ - [User Guide](./docs/debugging.md)
+ - [EXPERIMENTAL!: Cryo-EM Support](./docs/cryoem.md)
 
 ## New in version 1.0.0
 
