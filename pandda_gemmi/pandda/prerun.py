@@ -13,6 +13,7 @@ from pandda_gemmi.comparators import (
     FilterRange,
     FilterExcludeFromAnalysis,
     FilterOnlyDatasets,
+    FilterIgnoreDatasets,
     FilterResolutionLowerLimit,
     FilterNoLigandData
 )
@@ -78,6 +79,7 @@ def prerun(args, console, processor):
 
     # Get the datasets to process
     dataset_filters = [
+        FilterIgnoreDatasets(args.ignore_datasets),
         FilterRFree(args.max_rfree, args.use_rwork),
         FilterResolutionLowerLimit(args.high_res_lower_limit),
         FilterRange(args.dataset_range),

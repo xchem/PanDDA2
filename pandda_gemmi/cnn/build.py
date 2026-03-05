@@ -91,8 +91,7 @@ class LitBuildScoring(lt.LightningModule):
     def forward(self, z,):
         z_encoding = self.z_encoder(z)
         corr_hat = ((F.hardtanh(self.fc_corr(z_encoding), min_val=-1.0, max_val=1.0) + 1) / 2) #* self.max_pos_atom_mask_radius
-
-
+    
         return corr_hat
 
 

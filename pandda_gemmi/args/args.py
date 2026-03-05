@@ -24,7 +24,7 @@ class PanDDAKWArgs:
     exclude_from_z_map_analysis: Optional[str] = None
     exclude_from_characterisation: Optional[str] = None
     only_datasets: Optional[str] = None
-    ignore_datasets: Optional[List[str]] = None
+    ignore_datasets: Optional[str] = None
     dynamic_res_limits: bool = True
     high_res_upper_limit: float = 1.0
     high_res_lower_limit: float = 4.0
@@ -298,7 +298,7 @@ class PanDDAKWArgs:
         )
         parser.add_argument(
             constants.ARGS_IGNORE_DATASETS,
-            type=list,
+            # type=list,
             default=None,
             help=constants.ARGS_IGNORE_DATASETS_HELP,
         )

@@ -3,6 +3,7 @@ from .filter_r_free import FilterRFree
 from .filter_range import FilterRange
 from .filter_exclude import FilterExcludeFromAnalysis
 from .filter_only_datasets import FilterOnlyDatasets
+from .filter_ignore_datasets import FilterIgnoreDatasets
 from .filter_spacegroup import FilterSpaceGroup
 from .filter_resolution import FilterResolution
 from .filter_compatible_structures import FilterCompatibleStructures
