@@ -17,7 +17,7 @@ from .event import Event
 
 # from pandda_gemmi.cnn import resnet
 from pandda_gemmi.dmaps import SparseDMap
-from pandda_gemmi.cnn import resnet18
+from pandda_gemmi.cnn.resnet import resnet18
 
 def sample_xmap(xmap, transform, sample_array):
     xmap.interpolate_values(sample_array, transform)
