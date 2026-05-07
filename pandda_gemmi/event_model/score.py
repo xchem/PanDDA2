@@ -15,7 +15,7 @@ import torch
 
 from .event import Event
 
-from pandda_gemmi.cnn import resnet
+# from pandda_gemmi.cnn import resnet
 from pandda_gemmi.cnn import resnet18
 from pandda_gemmi.dmaps import SparseDMap
 
@@ -214,7 +214,7 @@ class ScoreCNN:
 
         # Load the model
         cnn = resnet18(num_classes=2, num_input=4)
-        cnn_path = Path(os.path.dirname(inspect.getfile(resnet))) / "model.pt"
+        cnn_path = Path(os.path.dirname(inspect.getfile(resnet18))) / "model.pt"
         cnn.load_state_dict(torch.load(cnn_path, map_location=self.dev))
 
         # Add model to device
@@ -405,7 +405,7 @@ class ScoreCNNLigand:
         # cnn = resnet18(num_classes=2, num_input=4)
         cnn = resnet18(num_classes=2, num_input=2)
 
-        cnn_path = Path(os.path.dirname(inspect.getfile(resnet))) / "model_ligand.pt"
+        cnn_path = Path(os.path.dirname(inspect.getfile(resnet18))) / "model_ligand.pt"
         cnn.load_state_dict(torch.load(cnn_path, map_location=self.dev))
 
         # Add model to device
