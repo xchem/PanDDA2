@@ -19,7 +19,7 @@ from .event import Event
 from pandda_gemmi.dmaps import SparseDMap
 from pandda_gemmi import cnn
 print(dir(cnn))
-from pandda_gemmi.cnn import resnet18
+from pandda_gemmi.cnn.resnets import resnet18
 
 
 def sample_xmap(xmap, transform, sample_array):
