@@ -417,6 +417,12 @@ class HeirarchicalSiteModelAlignedSequences:
 
         return seq
 
+    def chain_is_protein(self, chain):
+        if any([is_protein_residue(res) for res in chain]):
+            return True
+        else:
+            return False
+
     def get_alignments(self, datasets: Dict[str, DatasetInterface]):
         # Iterate over chains in datasets, creating alignment classes for acceptably good alignments as necessary
         alignments = {}
@@ -632,10 +638,11 @@ class HeirarchicalSiteModelAlignedSequences:
 
                 sites[len(sites)+1] = Site(
                     new_site_events,
-                    np.mean(
-                        centroid_array[clusters==cluster, :],
-                        axis=0,
-                    ).flatten(),
+                    # np.mean(
+                    #     centroid_array[clusters==cluster, :],
+                    #     axis=0,
+                    # ).flatten(),
+                    np.array([0.0,0.0,0.0])
                 )
 
         return sites
