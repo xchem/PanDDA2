@@ -5,6 +5,7 @@ import gemmi
 from rich import print as rprint
 from rich.traceback import install
 install(show_locals=True)
+import scipy
 # import networkx as nx
 
 
@@ -600,14 +601,23 @@ class HeirarchicalSiteModelAlignedSequences:
         rprint(event_id_array)
 
         # Cluster the centroids
-        clusters = fclusterdata(
-            distance_matrix,
+        linkage = scipy.cluster.hierarchy.linkage(
+            scipy.spatial.distance.squareform(distance_matrix),
+            method='complete',
+            metric='chebyshev'
+        )
+        clusters = scipy.cluster.hierarchy.fcluster(
+            linkage,
             t=self.t,
             criterion="distance",
-            # method="centroid"
-            method="complete",
-            
         )
+        # clusters = fclusterdata(
+        #     ,
+            
+        #     # method="centroid"
+        #     method="complete",
+            
+        # )
         rprint('Clusters are:')
         rprint(clusters)
 
