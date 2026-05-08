@@ -417,7 +417,7 @@ class HeirarchicalSiteModelAlignedSequences:
                 seq.append(gemmi.one_letter_code([res.name]))
                 insertion.append(str(res.seqid.num))
 
-        return seq
+        return seq, insertion
 
     def chain_is_protein(self, chain):
         if any([is_protein_residue(res) for res in chain]):
