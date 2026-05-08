@@ -3,6 +3,8 @@ from scipy import spatial
 from scipy.cluster.hierarchy import fclusterdata
 import gemmi
 from rich import print as rprint
+from rich.traceback import install
+install(show_locals=True)
 # import networkx as nx
 
 
