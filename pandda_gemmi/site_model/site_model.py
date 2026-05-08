@@ -444,10 +444,13 @@ class HeirarchicalSiteModelAlignedSequences:
                 # Iterate over alignment references, getting alignments
                 for ref_dtag, ref_chain in alignments:
                     ref_seq, ref_insertions = self.chain_to_seq(datasets[ref_dtag].structure.structure[0][ref_chain])
-                    insertion_mapping = self.get_insertion_mapping(ref_seq, ref_insertions, sequence, insertions)
+                    insertion_mapping, score = self.get_insertion_mapping(ref_seq, ref_insertions, sequence, insertions)
+
+                    if (ref_dtag, ref_chain) == (dtag, chain.name):
+                        assert score > 0.8
 
                     # If the alignment is "good", add to class
-                    if self.score_alignment(insertion_mapping) > 0.8:
+                    if score > 0.8:
                         alignments[(ref_dtag, ref_chain)][(dtag, chain)] = insertion_mapping
 
                     # Otherwise create a new alignment class and add it
