@@ -287,19 +287,21 @@ class HeirarchicalSiteModel:
 
 class HeirarchicalSiteModelAlignedSequences:
 
-    def __init__(self, t=8.0, debug=False):
+    def __init__(self, t=8.0, debug=False, distance=5.0):
         self.t = t
         self.debug = debug
+        self.distance = distance
 
     def get_event_environment(
             self,
             query_pos_array,
             structure_array,
-            ns
+            ns,
+            distance = 5.0
     ):
         indexess = ns.query_ball_point(
             query_pos_array,
-            5.0,
+            distance,
         )
         res_ids = {}
 
@@ -313,7 +315,7 @@ class HeirarchicalSiteModelAlignedSequences:
         return [res_id for res_id in res_ids.keys()]
 
 
-    def get_event_environments(self, datasets, events):
+    def get_event_environments(self, datasets, events, distance=5.0):
         # Get the environments for each event
         event_evenvironments = {}
         for dtag, dataset in datasets.items():
@@ -327,6 +329,7 @@ class HeirarchicalSiteModelAlignedSequences:
                     event.pos_array,
                     st_arr,
                     ns,
+                    distance=distance,
                 )
 
         return event_evenvironments
@@ -379,7 +382,7 @@ class HeirarchicalSiteModelAlignedSequences:
                 count += 1
 
         # Get the aligned index to native index for the mov seq
-        mov_seq_index_to_key = {_j: _key for _j, _key in zip(insertions, sequence)}
+        mov_seq_index_to_key = {_j: _key for _j, _key in enumerate(insertions)}
         aligned_to_mov = {}
         count = 0
         for aligned_index, item in enumerate(aligned_mov):
@@ -436,12 +439,9 @@ class HeirarchicalSiteModelAlignedSequences:
 
                 # Get the seqeunce
                 sequence, insertions = self.chain_to_seq(chain)
-
-                # If no alignments yet, create one from this chain
-                if len(alignments) == 0:
-                    alignments[(dtag, chain.name)] = {}
                     
                 # Iterate over alignment references, getting alignments
+                matched = False
                 for ref_dtag, ref_chain in alignments:
                     ref_seq, ref_insertions = self.chain_to_seq(datasets[ref_dtag].structure.structure[0][ref_chain])
                     insertion_mapping, score = self.get_insertion_mapping(ref_seq, ref_insertions, sequence, insertions)
@@ -451,15 +451,19 @@ class HeirarchicalSiteModelAlignedSequences:
 
                     # If the alignment is "good", add to class
                     if score > 0.8:
-                        alignments[(ref_dtag, ref_chain)][(dtag, chain)] = insertion_mapping
+                        matched = True
+                        break
 
                     # Otherwise create a new alignment class and add it
-                    else:
-                        alignments[(dtag, chain.name)] = {(dtag, chain): insertion_mapping}
+                if matched:
+                    alignments[(ref_dtag, ref_chain)][(dtag, chain.name)] = insertion_mapping
+
+                else:
+                    alignments[(dtag, chain.name)] = {(dtag, chain.name): self.get_insertion_mapping(sequence, insertions, sequence, insertions)[0]}
                 
         return alignments
     
-    def get_event_distance(self, ref_event_env, mov_event_env, msa, ref_dtag, mov_dtag):
+    def get_event_distance(self, ref_event_env, mov_event_env, msa, ref_dtag, mov_dtag):    
         # Get the msa classes for each dtag's chains
         ref_chain_classes = {}
         mov_chain_classes = {}
@@ -470,24 +474,57 @@ class HeirarchicalSiteModelAlignedSequences:
                 if aligned_dtag == mov_dtag:
                     mov_chain_classes[aligned_chain] = (alignment_dtag, alignment_chain)
 
-        # Map residues between the environments
-        ref_aligned_resids = []
-        for chain, res in ref_event_env:
-            chain_class = ref_chain_classes[chain]
-            alignment = msa[chain_class][(ref_dtag, chain)]
-            aligned_index = alignment[res]
-            ref_aligned_resids.append((chain_class[1], aligned_index))
-        ref_aligned_resids_set = set(ref_aligned_resids)
+        rprint('ref_chain_classes')
+        rprint(ref_chain_classes)
+        rprint('mov_chain_classes')
+        rprint(mov_chain_classes)
 
+        # Map residues between the environments
+        try:
+            ref_aligned_resids = []
+            for chain, res in ref_event_env:
+                if chain not in ref_chain_classes:
+                    continue
+                chain_class = ref_chain_classes[chain]
+                alignment = msa[chain_class][(ref_dtag, chain)]
+                aligned_index = alignment[res]
+                ref_aligned_resids.append((chain_class[1], aligned_index))
+            ref_aligned_resids_set = set(ref_aligned_resids)
+        except:
+            rprint('mov res and alignment')
+            rprint(res)
+            rprint(alignment)
+            raise Exception
+        
         mov_aligned_resids = []
-        for chain, res in mov_event_env:
-            chain_class = ref_chain_classes[chain]
-            alignment = msa[chain_class][(mov_dtag, chain)]
-            aligned_index = alignment[res]
-            mov_aligned_resids.append((chain_class[1], aligned_index))
+        try:
+            for chain, res in mov_event_env:
+                if chain not in mov_chain_classes:
+                    continue
+                chain_class = mov_chain_classes[chain]
+                alignment = msa[chain_class][(mov_dtag, chain)]
+                aligned_index = alignment[res]
+                mov_aligned_resids.append((chain_class[1], aligned_index))
+        except:
+            rprint('mov res and alignment')
+            rprint(res)
+            rprint(alignment)
+            raise Exception
         mov_aligned_resids_set = set(mov_aligned_resids)
 
-        return 1 - (len(mov_aligned_resids_set.intersection(ref_aligned_resids_set)) / len(mov_aligned_resids_set.union(ref_aligned_resids_set)))
+        rprint('ref_aligned_resids_set')
+        rprint(ref_aligned_resids_set)
+        rprint('mov_aligned_resids_set')
+        rprint(mov_aligned_resids_set)
+
+        union = mov_aligned_resids_set.union(ref_aligned_resids_set)
+        intersection = mov_aligned_resids_set.intersection(ref_aligned_resids_set)
+
+        if len(union) == 0:
+            return 1.0
+
+        else:
+            return 1 - (len(intersection) / len(union))
 
     def get_event_distances(self, event_environments, msa):
         correlations = {}
@@ -495,7 +532,13 @@ class HeirarchicalSiteModelAlignedSequences:
             correlations[ref_event_id] = {}
             for mov_event_id, mov_event_env in event_environments.items():
                 ref_dtag, mov_dtag = ref_event_id[0], mov_event_id[0]
-                correlations[ref_event_id][mov_event_id] = self.get_event_distance(ref_event_env, mov_event_env, msa, ref_dtag, mov_dtag)
+                correlations[ref_event_id][mov_event_id] = self.get_event_distance(
+                    ref_event_env, 
+                    mov_event_env, 
+                    msa, 
+                    ref_dtag, 
+                    mov_dtag,
+                    )
 
         return correlations
         ...
@@ -505,7 +548,8 @@ class HeirarchicalSiteModelAlignedSequences:
                  events: Dict[Tuple[str, int], EventInterface],
                  ref_dataset,
                  existing_events,
-                 existing_sites
+                 existing_sites,
+                 
                  ):
 
         # Handle edge cases
@@ -524,7 +568,7 @@ class HeirarchicalSiteModelAlignedSequences:
         rprint(msa)
 
         # Find the residue environment of each event (chain and residue number)
-        event_environments: Dict[Tuple[str, int], List[Tuple[str, str]]] = self.get_event_environments(datasets, events)
+        event_environments: Dict[Tuple[str, int], List[Tuple[str, str]]] = self.get_event_environments(datasets, events, distance=self.distance)
         rprint('Event environments are:')
         rprint(event_environments)
 
@@ -560,8 +604,9 @@ class HeirarchicalSiteModelAlignedSequences:
             distance_matrix,
             t=self.t,
             criterion="distance",
-            method="centroid"
-            # method="complete"
+            # method="centroid"
+            method="complete",
+            
         )
         rprint('Clusters are:')
         rprint(clusters)
