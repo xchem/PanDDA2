@@ -439,7 +439,7 @@ class HeirarchicalSiteModelAlignedSequences:
 
                 # If no alignments yet, create one from this chain
                 if len(alignments) == 0:
-                    alignments[(dtag, chain)] = {}
+                    alignments[(dtag, chain.name)] = {}
                     
                 # Iterate over alignment references, getting alignments
                 for ref_dtag, ref_chain in alignments:
@@ -452,7 +452,7 @@ class HeirarchicalSiteModelAlignedSequences:
 
                     # Otherwise create a new alignment class and add it
                     else:
-                        alignments[(dtag, chain)] = {(dtag, chain): insertion_mapping}
+                        alignments[(dtag, chain.name)] = {(dtag, chain): insertion_mapping}
                 
         return alignments
     
