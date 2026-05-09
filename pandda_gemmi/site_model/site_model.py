@@ -288,7 +288,7 @@ class HeirarchicalSiteModel:
 
 class HeirarchicalSiteModelAlignedSequences:
 
-    def __init__(self, t=8.0, debug=False, distance=5.0):
+    def __init__(self, t=0.3, debug=False, distance=7.0):
         self.t = t
         self.debug = debug
         self.distance = distance
@@ -521,11 +521,17 @@ class HeirarchicalSiteModelAlignedSequences:
         union = mov_aligned_resids_set.union(ref_aligned_resids_set)
         intersection = mov_aligned_resids_set.intersection(ref_aligned_resids_set)
 
-        if len(union) == 0:
-            return 1.0
+        # if len(union) == 0:
+        #     return 1.0
 
+        # else:
+        #     return 1 - (len(intersection) / len(union))
+        if len(intersection) == 0:
+            return 1.0
+        elif len(intersection) == len(union):
+            return 0.0
         else:
-            return 1 - (len(intersection) / len(union))
+            return 1/len(intersection)
 
     def get_event_distances(self, event_environments, msa):
         correlations = {}

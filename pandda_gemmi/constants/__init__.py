@@ -327,7 +327,7 @@ ARGS_RANK_METHOD_DEFAULT: str = "event_score"
 ARGS_MIN_BDC_DEFAULT: float = 0.0
 ARGS_MAX_BDC_DEFAULT: float = 0.95
 # ARGS_MAX_SITE_DISTANCE_CUTOFF_DEFAULT: float = 10.0
-ARGS_MAX_SITE_DISTANCE_CUTOFF_DEFAULT: float = 0.6
+ARGS_MAX_SITE_DISTANCE_CUTOFF_DEFAULT: float = 0.3
 
 ###################################################################
 # # Useful Regexes
