@@ -6,6 +6,8 @@ from rich import print as rprint
 from rich.traceback import install
 install(show_locals=True)
 import scipy
+import matplotlib.pyplot as plt
+
 # import networkx as nx
 
 
@@ -710,6 +712,10 @@ class HeirarchicalSiteModelAlignedSequences:
                     # ).flatten(),
                     np.array([0.0,0.0,0.0])
                 )
+
+        plt.figure()
+        dn = scipy.cluster.hierarchy.dendrogram(linkage)
+        plt.savefig('dendrogram.png')
 
         return sites
 
