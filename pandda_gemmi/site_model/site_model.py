@@ -290,7 +290,7 @@ class HeirarchicalSiteModel:
 
 class HeirarchicalSiteModelAlignedSequences:
 
-    def __init__(self, t=0.3, debug=False, distance=7.0):
+    def __init__(self, t=0.3, debug=False, distance=8.0):
         self.t = t
         self.debug = debug
         self.distance = distance
