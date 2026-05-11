@@ -612,7 +612,8 @@ class HeirarchicalSiteModelAlignedSequences:
         linkage = scipy.cluster.hierarchy.linkage(
             scipy.spatial.distance.squareform(distance_matrix),
             method='complete',
-            metric='chebyshev'
+            optimal_ordering=True
+            # metric='chebyshev'
         )
         clusters = scipy.cluster.hierarchy.fcluster(
             linkage,
