@@ -239,7 +239,7 @@ class Reflections(ReflectionsInterface):
         if not exact_size:
             return self.reflections.transform_f_phi_to_map(self.f, self.phi, sample_rate=self.resolution()/0.4999)
         else:
-            return self.reflections.transform_f_phi_to_map(self.f, self.phi, exact_size=self.resolution()/0.4999)
+            return self.reflections.transform_f_phi_to_map(self.f, self.phi, exact_size=exact_size)
 
 
     @classmethod

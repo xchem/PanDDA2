@@ -12,7 +12,7 @@ import pytorch_lightning as lt
 from .interfaces import *
 from .base import transform_from_arrays, SampleFrame, grid_from_template, get_ligand_mask, get_structure_array, copy_map, _get_ed_mask_float
 from .constants import SAMPLE_SIZE, SAMPLE_SPACING
-from .resnet import resnet10, _resnet, BasicBlock
+from .resnets import resnet10, _resnet, BasicBlock
 
 
 def get_sample_frame_from_event(event: EventI, sample_size, sample_spacing) -> SampleFrameI:

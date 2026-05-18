@@ -1,7 +1,6 @@
 import os
 import shutil
 import time
-import inspect
 
 # try:
 #     from sklearnex import patch_sklearn
@@ -10,66 +9,43 @@ import inspect
 # except ImportError:
 #     print('No sklearn-express available!')
 
-import gdown
-import yaml
-
 import numpy as np
-import pandas as pd
-import gemmi
 
 from pandda_gemmi.interfaces import *
-from pandda_gemmi.args import PanDDAArgs
-from pandda_gemmi.fs import PanDDAFS
-from pandda_gemmi.dataset import XRayDataset, StructureArray, Structure
+
+from pandda_gemmi.dataset import Structure
 from pandda_gemmi.dmaps import (
     SparseDMap,
     SparseDMapStream,
     TruncateReflections,
     SmoothReflections,
+    RealSpaceSmoothReflections
 )
 from pandda_gemmi.alignment import Alignment, DFrame
-from pandda_gemmi.processor import ProcessLocalRay, Partial
+from pandda_gemmi.processor import Partial
 from pandda_gemmi.comparators import (
     get_comparators,
     FilterRFree,
-    FilterRange,
-    FilterExcludeFromAnalysis,
-    FilterOnlyDatasets,
     FilterSpaceGroup,
     FilterResolution,
     FilterCompatibleStructures,
-    FilterResolutionLowerLimit,
-    FilterNoLigandData
 )
 from pandda_gemmi.event_model.event import EventBuild
 from pandda_gemmi.event_model.characterization import get_characterization_sets, CharacterizationNNAndFirst
 from pandda_gemmi.event_model.filter_characterization_sets import filter_characterization_sets
-from pandda_gemmi.event_model.outlier import PointwiseNormal, PointwiseMAD
-from pandda_gemmi.event_model.cluster import ClusterDensityDBSCAN
-from pandda_gemmi.event_model.score import get_model_map, ScoreCNNLigand
+from pandda_gemmi.event_model.outlier import PointwiseMAD
+from pandda_gemmi.event_model.score import get_model_map
 from pandda_gemmi.event_model.filter import (
-    FilterSize,
-    FilterScore,
     FilterSymmetryPosBuilds,
     FilterLocallyHighestBuildScoring
 )
 from pandda_gemmi.event_model.select import select_model
 from pandda_gemmi.event_model.output import output_maps
 from pandda_gemmi.event_model.filter_selected_events import filter_selected_events
-from pandda_gemmi.event_model.get_bdc import get_bdc
 
-from pandda_gemmi.site_model import HeirarchicalSiteModel, Site, get_sites
-from pandda_gemmi.autobuild import AutobuildResult, ScoreCNNEventBuild
+from pandda_gemmi.autobuild import AutobuildResult
 from pandda_gemmi.autobuild.inbuilt import mask_dmap, get_conformers, autobuild_conformer
-from pandda_gemmi.autobuild.merge import merge_autobuilds, MergeHighestBuildScore
-from pandda_gemmi.ranking import rank_events, RankHighEventScore, RankHighEventScoreBySite
-from pandda_gemmi.tables import output_tables
-from pandda_gemmi.pandda_logging import PanDDAConsole
-from pandda_gemmi import serialize
-from pandda_gemmi.cnn import load_model_from_checkpoint, EventScorer, LitEventScoring, BuildScorer, LitBuildScoring, \
-    set_structure_mean
 
-from pandda_gemmi.metrics import get_hit_in_site_probabilities
 from pandda_gemmi.plots import plot_aligned_density_projection
 
 def read_dataset(fs, dtag):
@@ -104,7 +80,8 @@ def process_dataset(
         processor,
         dataset_refs,
         structure_array_refs,
-        score_build_ref
+        score_build_ref,
+    process_all=False
 ):
     pandda_events = {}
     autobuilds = {}
@@ -132,7 +109,7 @@ def process_dataset(
     comparator_datasets: Dict[str, DatasetInterface] = get_comparators(
         datasets,
         [
-            FilterRFree(args.max_rfree),
+            FilterRFree(args.max_rfree, args.use_rwork),
             FilterSpaceGroup(dataset),
             FilterCompatibleStructures(dataset, debug=args.debug),
             FilterResolution(dataset_res, args.max_shell_datasets, 100, args.high_res_buffer)],
@@ -181,7 +158,7 @@ def process_dataset(
 
     # Get the reference frame and save it to the object store
     time_begin_get_frame = time.time()
-    reference_frame: DFrame = DFrame(dataset, processor)
+    reference_frame: DFrame = DFrame(dataset, processor, debug=args.debug)
     reference_frame_ref = processor.put(reference_frame)
     time_finish_get_frame = time.time()
     # TODO: Log properly
@@ -197,14 +174,23 @@ def process_dataset(
     ]
     transforms_ref = processor.put(transforms)
 
+    post_transforms = [
+        RealSpaceSmoothReflections(dataset, fs=fs,debug=args.debug)
+    ]
+    post_transforms_ref = processor.put(post_transforms)
+
     # Load the locally aligned density maps and construct an array of them
     time_begin_get_dmaps = time.time()
+    print('Datasets to transform')
+    print(sorted([_dtag for _dtag in comparator_datasets]))
+    print(sorted([_dtag for _dtag in dataset_refs]))
     dmaps_dict = processor.process_dict(
         {
             _dtag: Partial(SparseDMapStream.parallel_load).paramaterise(
                 dataset_refs[_dtag],
                 alignment_refs[_dtag],
                 transforms_ref,
+                post_transforms_ref,
                 reference_frame_ref,
                 args.debug
             )
@@ -266,7 +252,7 @@ def process_dataset(
         dataset_dmap_array,
         reference_frame,
         PointwiseMAD(),
-        process_all=False
+        process_all=process_all
     )
     # print(f"Models to process are {models_to_process} out of {[x for x in characterization_sets]}")
 
@@ -310,7 +296,8 @@ def process_dataset(
             score_event,
             fs,
             model_number,
-            dtag
+            dtag,
+            [_dtag for _dtag in dtag_array[characterization_set_masks[model_number]] ]
         )()
         for model_number
         in models_to_process

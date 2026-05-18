@@ -43,9 +43,13 @@ class SparseDMapStream:
         return aligned_xmap
 
     @staticmethod
-    def parallel_load(dataset, alignment, transforms, dframe, debug=False):
+    def parallel_load(dataset, alignment, transforms, post_transforms, dframe, debug=False):
 
         begin = time.time()
+
+        if debug:
+            original_xmap = dataset.reflections.transform_f_phi_to_map(sample_rate=dataset.reflections.resolution()/0.4999)
+            original_xmap_size = (original_xmap.nu, original_xmap.nv, original_xmap.nw)
 
         begin_transform = time.time()
         for transform in transforms:
@@ -54,22 +58,33 @@ class SparseDMapStream:
         # print(f"\tTransform: {finish_transform - begin_transform}")
 
         begin_fft = time.time()
-        xmap = dataset.reflections.transform_f_phi_to_map()
+        xmap = dataset.reflections.transform_f_phi_to_map(sample_rate=dataset.reflections.resolution()/0.4999)
         if debug:
-            print([x.label for x in dataset.reflections.reflections.columns])
-            print(np.array(dataset.reflections.reflections))
+            # print([x.label for x in dataset.reflections.reflections.columns])
+            # print(np.array(dataset.reflections.reflections))
             arr = np.array(xmap)
             print(f'{dataset.name} raw xmap stats: min {np.min(arr)} max {np.max(arr)} mean {np.mean(arr)}')
+            new_xmap_size = (xmap.nu, xmap.nv, xmap.nw)
+
 
         finish_fft = time.time()
         # print(f"\tFFT: {finish_fft - begin_fft}")
 
         aligned_xmap = SparseDMapStream.align_xmap(xmap, dframe, alignment)
 
+        # Post transform
+        for transform in post_transforms:
+            transformed_xmap = transform(aligned_xmap, dframe, dataset.name)
+
         finish = time.time()
+
+        if debug:
+            transformed_xmap_size = (transformed_xmap.nu, transformed_xmap.nv, transformed_xmap.nw)
+            print(f'Pre transform size: {original_xmap_size} vs transformed size: {new_xmap_size} vs pos-transformed: {transformed_xmap_size}')
+
         # print(f"Aligned xmap in: {round(finish-begin, 2)}")
 
-        return aligned_xmap
+        return SparseDMap.from_xmap(transformed_xmap, dframe, debug=debug)
 
     def array_load(self, ):
         # Get the shape to load datasets into
@@ -175,7 +190,7 @@ class SparseDMapStream:
         finish_interpolate = time.time()
         # print(f"\tInterpolation: {finish_interpolate-begin_interpolate}")
 
-        return SparseDMap.from_xmap(aligned_xmap, dframe)
+        return aligned_xmap
 
     def __getitem__(self, dtag):
         ...

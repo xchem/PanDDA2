@@ -24,7 +24,7 @@ class PanDDAKWArgs:
     exclude_from_z_map_analysis: Optional[str] = None
     exclude_from_characterisation: Optional[str] = None
     only_datasets: Optional[str] = None
-    ignore_datasets: Optional[List[str]] = None
+    ignore_datasets: Optional[str] = None
     dynamic_res_limits: bool = True
     high_res_upper_limit: float = 1.0
     high_res_lower_limit: float = 4.0
@@ -38,6 +38,7 @@ class PanDDAKWArgs:
     sample_rate: float = 3.0
     max_rmsd_to_reference: float = 1.5
     max_rfree: float = 0.4
+    use_rwork: float = False
     dataset_range: str = "0-99999"
     max_wilson_plot_z_score: float = 1.5
     same_space_group_only: bool = False
@@ -93,6 +94,8 @@ class PanDDAKWArgs:
     rank_method: str = constants.ARGS_RANK_METHOD_DEFAULT
     rescore_event_method: str = constants.ARGS_RESCORE_EVENT_METHOD_DEFAULT
     source_pandda: Path = None
+    output_full_ground_state: bool = False
+    process_all: bool = False
     debug: bool = False
     # debug: Debug = Debug.DEFAULT
 
@@ -295,7 +298,7 @@ class PanDDAKWArgs:
         )
         parser.add_argument(
             constants.ARGS_IGNORE_DATASETS,
-            type=list,
+            # type=list,
             default=None,
             help=constants.ARGS_IGNORE_DATASETS_HELP,
         )
@@ -310,6 +313,12 @@ class PanDDAKWArgs:
             type=float,
             default=0.4,
             help=constants.ARGS_MAX_RFREE_HELP,
+        )
+        parser.add_argument(
+            constants.ARGS_USE_RWORK,
+            type=lambda x: bool(strtobool(x)),
+            default=False,
+            help=constants.ARGS_USE_RWORK_HELP,
         )
         parser.add_argument(
             constants.ARGS_DATASET_RANGE,
@@ -654,6 +663,19 @@ class PanDDAKWArgs:
             help=constants.ARGS_RANK_METHOD_HELP,
         )
 
+
+        parser.add_argument(
+            '--process_all',
+            type=lambda x: bool(strtobool(x)),
+            default=False,
+            help='Process even bad models. Helpful for discovering heterogeneity. VERY LARGE.',
+        )
+        parser.add_argument(
+            '--output_full_ground_state',
+            type=lambda x: bool(strtobool(x)),
+            default=False,
+            help='Output the full ground state distributions used. VERY LARGE.',
+        )
         parser.add_argument(
             constants.ARGS_DEBUG,
             type=lambda x: bool(strtobool(x)),
@@ -728,6 +750,7 @@ class PanDDAArgs(PanDDAKWArgs, PanDDAPArgs):
             sample_rate=args.sample_rate,
             max_rmsd_to_reference=args.max_rmsd_to_reference,
             max_rfree=args.max_rfree,
+            use_rwork=args.use_rwork,
             dataset_range=args.dataset_range,
             max_wilson_plot_z_score=args.max_wilson_plot_z_score,
             same_space_group_only=args.same_space_group_only,
@@ -782,6 +805,7 @@ class PanDDAArgs(PanDDAKWArgs, PanDDAPArgs):
             cif_strategy=args.cif_strategy,
             rank_method=args.rank_method,
             source_pandda=args.source_pandda,
+            process_all=args.process_all,
             debug=args.debug,
         )
 
@@ -910,5 +934,6 @@ class PanDDAProcessDatasetArgs(PanDDAKWArgs, PanDDAProcessDatasetPArgs):
             cif_strategy=args.cif_strategy,
             rank_method=args.rank_method,
             source_pandda=args.source_pandda,
+            process_all=args.process_all,
             debug=args.debug,
         )

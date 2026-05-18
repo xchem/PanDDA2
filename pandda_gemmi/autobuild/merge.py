@@ -55,6 +55,8 @@ def merge_autobuilds(
         dtag_autobuilds = [[event_id, autobuilds[event_id]] for event_id in dtag_events]
         # print(dtag_autobuilds)
 
+        if len(dtag_events) == 0:
+            continue
         #
         all_autobuilds = {}
         for event_id, event_autobuilds in dtag_autobuilds:
@@ -79,6 +81,8 @@ def merge_autobuilds(
             all_autobuilds,
             {_event_id: events[_event_id] for _event_id in dtag_events}
         )
+        if selected_build_path == None:
+            continue
         # print(f"\tSlected build path: {selected_build_path}")
         model_building_dir = fs.output.processed_datasets[dtag] / constants.PANDDA_MODELLED_STRUCTURES_DIR
         model_file = model_building_dir / constants.PANDDA_EVENT_MODEL.format(dtag)
@@ -99,6 +103,44 @@ def merge_autobuilds(
 class MergeHighestRSCC:
     def __call__(self, autobuilds: Dict[str, float], dtag_events: Dict[Tuple[str, int], EventInterface]):
         return max(autobuilds, key=lambda _path: autobuilds[_path])
+
+class MergeHighestEventScore:
+    # def __call__(self, autobuilds: Dict[str, float], dtag_events: Dict[Tuple[str, int], EventInterface]):
+    #     return max(autobuilds, key=lambda _path: -autobuilds[_path]['score'])
+
+    def __call__(
+            self,
+            autobuilds: Dict[str, Tuple[float, Tuple[str,int]]],
+            dtag_events: Dict[Tuple[str, int], EventInterface],
+    ):
+        # highest_scoring_event_id = max(
+        #     dtag_events,
+        #     key=lambda _event_id: (dtag_events[_event_id].build.signal / dtag_events[_event_id].build.noise) * dtag_events[_event_id].local_strength,
+        # )
+        # dtag_autobuilds = {
+        #     event_idx: result
+        #     for (dtag, event_idx), result
+        #     in autobuilds.items()
+        #     if dtag
+        # }
+        highest_scoring_event_id = max(
+            dtag_events,
+            key=lambda _event_id: dtag_events[_event_id].score,
+        )
+        highest_scoring_event_autobuilds = {
+            _path: score_and_event_id[0]
+            for _path, score_and_event_id
+            in autobuilds.items()
+            if highest_scoring_event_id[1] == score_and_event_id[1][1]
+        }
+        # print(highest_scoring_event_autobuilds)
+        if len(highest_scoring_event_autobuilds) == 0:
+            return None
+        else:
+            return max(
+                highest_scoring_event_autobuilds,
+                key=lambda _path: highest_scoring_event_autobuilds[_path],
+            )
 
 class MergeHighestBuildScore:
     # def __call__(self, autobuilds: Dict[str, float], dtag_events: Dict[Tuple[str, int], EventInterface]):
@@ -130,10 +172,13 @@ class MergeHighestBuildScore:
             if highest_scoring_event_id[1] == score_and_event_id[1][1]
         }
         # print(highest_scoring_event_autobuilds)
-        return max(
-            highest_scoring_event_autobuilds,
-            key=lambda _path: highest_scoring_event_autobuilds[_path],
-        )
+        if len(highest_scoring_event_autobuilds) == 0:
+            return None
+        else:
+            return max(
+                highest_scoring_event_autobuilds,
+                key=lambda _path: highest_scoring_event_autobuilds[_path],
+            )
 
 class MergeHighestBuildAndEventScore:
     def __call__(

@@ -2,14 +2,21 @@ from ..interfaces import *
 
 
 class FilterRFree:
-    def __init__(self, max_rfree: float):
+    def __init__(self, max_rfree: float, use_rwork: bool):
         self.max_rfree = max_rfree
+        self.use_rwork = use_rwork
 
     def __call__(self, datasets: Dict[str, DatasetInterface]):
-        good_rfree_dtags = filter(
-            lambda dtag: datasets[dtag].structure.rfree() < self.max_rfree,
-            datasets,
-        )
+        if self.use_rwork == False:
+            good_rfree_dtags = filter(
+                lambda dtag: datasets[dtag].structure.rfree() < self.max_rfree,
+                datasets,
+            )
+        else:
+            good_rfree_dtags = filter(
+                lambda dtag: datasets[dtag].structure.rwork() < self.max_rfree,
+                datasets,
+            )
 
         new_datasets = {dtag: datasets[dtag] for dtag in good_rfree_dtags}
 

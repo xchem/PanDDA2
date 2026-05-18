@@ -1,25 +1,40 @@
+import os
+os.environ["RAY_DEDUP_LOGS"] = "0"
+
 import time
 
-try:
-    from sklearnex import patch_sklearn
+# try:
+#     from sklearnex import patch_sklearn
 
-    patch_sklearn()
-except ImportError:
-    print('No sklearn-express available!')
+#     patch_sklearn()
+# except ImportError:
+#     print('No sklearn-express available!')
 
+print('Importing interfaces...')
 from pandda_gemmi.interfaces import *
+print('Importing structure array...')
 from pandda_gemmi.dataset import StructureArray
+print('Importing ray...')
 from pandda_gemmi.processor import ProcessLocalRay
+print('Importing pandda console...')
 from pandda_gemmi.pandda_logging import PanDDAConsole
+print('Importing prerun...')
 from pandda_gemmi.pandda.prerun import prerun
+print('Importing scoring models...')
 from pandda_gemmi.pandda.get_scoring_models import get_scoring_models
+print('Importing args...')
 from pandda_gemmi.args import PanDDAProcessDatasetArgs
+print('Importing process model...')
 from pandda_gemmi.pandda.process_model import ProcessModel
+print('Importing process dataset...')
 from pandda_gemmi.pandda.process_dataset import process_dataset
+
+print(f'Name: {__name__}')
 
 if __name__ == '__main__':
     # Parse Command Line Arguments
     args = PanDDAProcessDatasetArgs.from_command_line()
+    print(f'Dataset to process is: {args.dtag}')
 
     # Create the console to print output throughout the programs run
     console = PanDDAConsole()
@@ -47,6 +62,7 @@ if __name__ == '__main__':
     process_model = ProcessModel(
         minimum_event_score=event_model_config['minimum_event_score'],
         use_ligand_data=args.use_ligand_data,
+        output_full_ground_state=args.output_full_ground_state,
         debug=args.debug,
     )
 
@@ -55,6 +71,8 @@ if __name__ == '__main__':
     if args.dtag in datasets_to_process:
         j = [_dtag for _dtag in datasets_to_process].index(args.dtag)
     else:
+        print(f'Dataset {args.dtag} not in datasets to process. Exiting.')
+        print(f'Dataset to process: {datasets_to_process}')
         exit()
     time_begin_process_datasets = time.time()
     process_dataset(
@@ -71,5 +89,6 @@ if __name__ == '__main__':
         processor,
         dataset_refs,
         structure_array_refs,
-        score_build_ref
+        score_build_ref,
+        process_all=args.process_all
     )

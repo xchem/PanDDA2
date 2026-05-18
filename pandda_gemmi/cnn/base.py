@@ -85,6 +85,8 @@ def get_structure_centroid(st: StructureI):
 
 
 def transform_from_arrays(vec: np.array, mat: np.array) -> TransformI:
+    print(vec)
+    print(mat)
     tr = gemmi.Transform()
     tr.vec.fromlist(vec.tolist())
     tr.mat.fromlist(mat.tolist())

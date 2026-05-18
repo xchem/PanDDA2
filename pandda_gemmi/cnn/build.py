@@ -11,7 +11,7 @@ from .interfaces import *
 from .base import get_ligand_mask, iterate_atoms, grid_from_template, get_structure_centroid, transform_from_arrays, \
     SampleFrame, _get_ed_mask_float
 from .constants import SAMPLE_SIZE, SAMPLE_SPACING
-from .resnet import resnet10, _resnet, BasicBlock
+from .resnets import resnet10, _resnet, BasicBlock
 
 
 def mask_xmap_ligand(autobuild: StructureI, xmap: GridI, radius=1.0) -> GridI:
@@ -32,6 +32,11 @@ def mask_xmap_ligand(autobuild: StructureI, xmap: GridI, radius=1.0) -> GridI:
 
 
 def get_sample_frame_from_build(autobuild: StructureI, sample_size, sample_spacing) -> SampleFrameI:
+    print(autobuild)
+    print(get_structure_centroid(autobuild))
+    print(sample_spacing)
+    print(sample_size)
+
     vec = get_structure_centroid(autobuild) - (0.5*sample_spacing*np.array(sample_size))
     mat = np.eye(3) * sample_spacing
     return SampleFrame(
@@ -86,8 +91,7 @@ class LitBuildScoring(lt.LightningModule):
     def forward(self, z,):
         z_encoding = self.z_encoder(z)
         corr_hat = ((F.hardtanh(self.fc_corr(z_encoding), min_val=-1.0, max_val=1.0) + 1) / 2) #* self.max_pos_atom_mask_radius
-
-
+    
         return corr_hat
 
 
