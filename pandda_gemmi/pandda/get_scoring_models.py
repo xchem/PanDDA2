@@ -1,6 +1,4 @@
 import os
-import shutil
-import time
 import inspect
 
 try:
@@ -13,66 +11,11 @@ except ImportError:
 import gdown
 import yaml
 
-import numpy as np
 import pandas as pd
-import gemmi
 
 from pandda_gemmi.interfaces import *
-from pandda_gemmi.args import PanDDAArgs
-from pandda_gemmi.fs import PanDDAFS
-from pandda_gemmi.dataset import XRayDataset, StructureArray, Structure
-from pandda_gemmi.dmaps import (
-    SparseDMap,
-    SparseDMapStream,
-    TruncateReflections,
-    SmoothReflections,
-)
-from pandda_gemmi.alignment import Alignment, DFrame
-from pandda_gemmi.processor import ProcessLocalRay, Partial
-from pandda_gemmi.comparators import (
-    get_comparators,
-    FilterRFree,
-    FilterRange,
-    FilterExcludeFromAnalysis,
-    FilterOnlyDatasets,
-    FilterSpaceGroup,
-    FilterResolution,
-    FilterCompatibleStructures,
-    FilterResolutionLowerLimit,
-    FilterNoLigandData
-)
-from pandda_gemmi.event_model.event import EventBuild
-from pandda_gemmi.event_model.characterization import get_characterization_sets, CharacterizationNNAndFirst
-from pandda_gemmi.event_model.filter_characterization_sets import filter_characterization_sets
-from pandda_gemmi.event_model.outlier import PointwiseNormal, PointwiseMAD
-from pandda_gemmi.event_model.cluster import ClusterDensityDBSCAN
-from pandda_gemmi.event_model.score import get_model_map, ScoreCNNLigand
-from pandda_gemmi.event_model.filter import (
-    FilterSize,
-    FilterScore,
-    FilterSymmetryPosBuilds,
-    FilterLocallyHighestBuildScoring
-)
-from pandda_gemmi.event_model.select import select_model
-from pandda_gemmi.event_model.output import output_maps
-from pandda_gemmi.event_model.filter_selected_events import filter_selected_events
-from pandda_gemmi.event_model.get_bdc import get_bdc
-
-from pandda_gemmi.site_model import HeirarchicalSiteModel, Site, get_sites
-from pandda_gemmi.autobuild import AutobuildResult, ScoreCNNEventBuild
-from pandda_gemmi.autobuild.inbuilt import mask_dmap, get_conformers, autobuild_conformer
-from pandda_gemmi.autobuild.merge import merge_autobuilds, MergeHighestBuildScore
-from pandda_gemmi.ranking import rank_events, RankHighEventScore, RankHighEventScoreBySite
-from pandda_gemmi.tables import output_tables
-from pandda_gemmi.pandda_logging import PanDDAConsole
 from pandda_gemmi import serialize
-from pandda_gemmi.cnn import load_model_from_checkpoint, EventScorer, LitEventScoring, BuildScorer, LitBuildScoring, \
-    set_structure_mean
-
-from pandda_gemmi.metrics import get_hit_in_site_probabilities
-from pandda_gemmi.plots import plot_aligned_density_projection
-from pandda_gemmi.pandda.process_dataset import process_dataset
-from pandda_gemmi.pandda.process_model import ProcessModel
+from pandda_gemmi.cnn import load_model_from_checkpoint, EventScorer, LitEventScoring, BuildScorer, LitBuildScoring
 
 
 def get_scoring_models(args, ):

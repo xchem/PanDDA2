@@ -714,9 +714,9 @@ class HeirarchicalSiteModelAlignedSequences:
                     np.array([0.0,0.0,0.0])
                 )
 
-        plt.figure()
-        dn = scipy.cluster.hierarchy.dendrogram(linkage)
-        plt.savefig('dendrogram.png')
+        # plt.figure()
+        # dn = scipy.cluster.hierarchy.dendrogram(linkage)
+        # plt.savefig('dendrogram.png')
 
         return sites
 
