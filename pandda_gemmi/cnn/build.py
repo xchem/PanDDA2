@@ -11,7 +11,7 @@ from .interfaces import *
 from .base import get_ligand_mask, iterate_atoms, grid_from_template, get_structure_centroid, transform_from_arrays, \
     SampleFrame, _get_ed_mask_float
 from .constants import SAMPLE_SIZE, SAMPLE_SPACING
-from .resnet import resnet10, _resnet, BasicBlock
+from .resnets import resnet10, _resnet, BasicBlock
 
 
 def mask_xmap_ligand(autobuild: StructureI, xmap: GridI, radius=1.0) -> GridI:

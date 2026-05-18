@@ -15,7 +15,7 @@ import pytorch_lightning as lt
 import yaml
 
 
-from pandda_gemmi.cnn import resnet
+from pandda_gemmi.cnn import resnets
 from pandda_gemmi.cnn import resnet18, resnet10
 
 
@@ -430,13 +430,13 @@ class ScoreCNNEventBuild:
         else:
             self.dev = "cpu"
 
-        config_path = Path(os.path.dirname(inspect.getfile(resnet))) / "model_event_build_config.yaml"
+        config_path = Path(os.path.dirname(inspect.getfile(resnets))) / "model_event_build_config.yaml"
         self.config = yaml.safe_load(config_path)
 
         # Load the model
         cnn = LitBuildScoring()
 
-        cnn_path = Path(os.path.dirname(inspect.getfile(resnet))) / "model_event_build.pt"
+        cnn_path = Path(os.path.dirname(inspect.getfile(resnets))) / "model_event_build.pt"
         cnn.load_state_dict(torch.load(cnn_path, map_location=self.dev)['state_dict'])
 
         # Add model to device

@@ -11,7 +11,7 @@ except ImportError:
 
 from pandda_gemmi.interfaces import *
 from pandda_gemmi import constants
-from pandda_gemmi.site_model import HeirarchicalSiteModel, Site, get_sites
+from pandda_gemmi.site_model import HeirarchicalSiteModel, HeirarchicalSiteModelAlignedSequences, Site, get_sites
 from pandda_gemmi.autobuild.merge import merge_autobuilds, MergeHighestBuildScore, MergeHighestEventScore
 from pandda_gemmi.ranking import rank_events, RankHighEventScoreBySite
 from pandda_gemmi.tables import output_tables
@@ -82,7 +82,7 @@ def postrun(
                 key=lambda _dtag: datasets_to_process[_dtag].reflections.resolution()
             )
         ],
-        HeirarchicalSiteModel(t=args.max_site_distance_cutoff, debug=args.debug),
+        HeirarchicalSiteModelAlignedSequences(t=args.max_site_distance_cutoff, debug=args.debug),
         existing_events,
         existing_sites
     )
