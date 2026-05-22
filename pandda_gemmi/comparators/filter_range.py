@@ -10,7 +10,8 @@ class FilterRange:
             self.range_min = None
             self.range_max = None
 
-        self.range_min , self.range_max = self.parse_range(dataset_range)
+        else:
+            self.range_min , self.range_max = self.parse_range(dataset_range)
 
     @staticmethod
     def parse_range(dataset_range):
