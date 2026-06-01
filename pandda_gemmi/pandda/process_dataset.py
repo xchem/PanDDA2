@@ -2,12 +2,12 @@ import os
 import shutil
 import time
 
-try:
-    from sklearnex import patch_sklearn
-
-    patch_sklearn()
-except ImportError:
-    print('No sklearn-express available!')
+# try:
+#     from sklearnex import patch_sklearn
+#
+#     patch_sklearn()
+# except ImportError:
+#     print('No sklearn-express available!')
 
 import numpy as np
 
@@ -47,6 +47,7 @@ from pandda_gemmi.autobuild import AutobuildResult
 from pandda_gemmi.autobuild.inbuilt import mask_dmap, get_conformers, autobuild_conformer
 
 from pandda_gemmi.plots import plot_aligned_density_projection
+from pandda_gemmi import serialize
 
 def read_dataset(fs, dtag):
     pandda_events = {}
