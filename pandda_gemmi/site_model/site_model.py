@@ -552,7 +552,6 @@ class HeirarchicalSiteModelAlignedSequences:
                  ref_dataset,
                  existing_events,
                  existing_sites,
-                 
                  ):
 
         # Handle edge cases
@@ -613,11 +612,14 @@ class HeirarchicalSiteModelAlignedSequences:
         # )
 
         # Get the event sites
-        event_sites = {}
+        event_clusters = {}
         for j, cluster in enumerate(np.unique(clusters)):
             cluster_event_id_array = event_id_array[clusters == cluster]
             for event_id in cluster_event_id_array:
-                event_sites[(str(event_id[0]), int(event_id[1]))] = j
+                event_clusters[(str(event_id[0]), int(event_id[1]))] = j
+        rprint('event clusters')
+        rprint(event_clusters)
+
 
         sites = {}
 
@@ -640,20 +642,21 @@ class HeirarchicalSiteModelAlignedSequences:
                 ]
 
                 # Get any new datasets that cluster with these (and aren't in a known site)
-                known_site_events_new_sites = set(
+                known_site_event_clusters = set(
                     [
-                        new_site_idx
-                        for event_id, new_site_idx
-                        in event_sites.items()
+                        event_cluster_idx
+                        for event_id, event_cluster_idx
+                        in event_clusters.items()
                         if event_id in known_site_events
                     ]
                 )
                 new_overlapping_events = [
                     new_event_id
-                    for new_event_id, new_site_idx
-                    in event_sites.items()
-                    if (new_site_idx in known_site_events_new_sites) & (new_event_id not in existing_events) & (new_event_id not in allocated_events)
+                    for new_event_id, event_cluster_idx
+                    in event_clusters.items()
+                    if (event_cluster_idx in known_site_event_clusters) & (new_event_id not in existing_events) & (new_event_id not in allocated_events)
                 ]
+                rprint(f'site idx: {site_idx} overlapping events: {new_overlapping_events}')
 
                 sites[site_idx] = Site(
                     known_site_events + new_overlapping_events,
