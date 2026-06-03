@@ -485,6 +485,8 @@ class HeirarchicalSiteModelAlignedSequences:
                     continue
                 chain_class = ref_chain_classes[chain]
                 alignment = msa[chain_class][(ref_dtag, chain)]
+                if res not in alignment:  # Skip het atoms with no alignment  
+                    continue
                 aligned_index = alignment[res]
                 ref_aligned_resids.append((chain_class[1], aligned_index))
             ref_aligned_resids_set = set(ref_aligned_resids)
@@ -501,6 +503,8 @@ class HeirarchicalSiteModelAlignedSequences:
                     continue
                 chain_class = mov_chain_classes[chain]
                 alignment = msa[chain_class][(mov_dtag, chain)]
+                if res not in alignment:  # Skip het atoms with no alignment  
+                    continue
                 aligned_index = alignment[res]
                 mov_aligned_resids.append((chain_class[1], aligned_index))
         except:
