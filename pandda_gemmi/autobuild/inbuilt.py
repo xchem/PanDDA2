@@ -19,6 +19,7 @@ from ..dataset.structure import save_structure, load_structure, Structure
 # Single source of truth for the ligand-dict reader; the previous duplicate
 # defined here had the bond-order column bug (see dataset.small).
 from ..dataset.small import get_fragment_mol_from_dataset_cif_path
+from ..dataset.small import get_comp_block_key
 from .autobuild import AutobuildResult
 
 
@@ -40,11 +41,8 @@ def get_structures_from_mol(mol: Chem.Mol, dataset_cif_path, max_conformers):
     cif = gemmi.cif.read(str(dataset_cif_path))
 
     # Find the relevant atoms loop
-    try:
-        atom_id_loop = list(cif['comp_LIG'].find_loop('_chem_comp_atom.atom_id'))
-    # print(f"Atom ID loop: {atom_id_loop}")
-    except:
-        atom_id_loop = list(cif['comp_XXX'].find_loop('_chem_comp_atom.atom_id'))
+    key = get_comp_block_key(cif)
+    atom_id_loop = list(cif[key].find_loop('_chem_comp_atom.atom_id'))
 
     fragment_structures = {}
     for i, conformer in enumerate(mol.GetConformers()):
