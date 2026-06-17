@@ -120,6 +120,8 @@ PanDDA 2 has a number of common command line options that may be of interest to 
   - [How To Filter Poor Quality Data](#how-to-filter-poor-quality-data)
 - `--max_rfree`
   - [How To Filter Poor Quality Data](#how-to-filter-poor-quality-data)
+- `--use_rwork`
+  - [How To Filter Poor Quality Data](#how-to-filter-poor-quality-data)
 
 ### How To Run Subsets Of Data
 
@@ -138,7 +140,8 @@ Although the defaults for PanDDA are usually appropriate, sometimes it is necess
 
 The main options PanDDA 2 provides for this are:
 1. `--high_res_lower_limit`: Process only those datasets whose assigned high resolution limit is above this value. For example, `--high_res_lower_limit=3.0` will only process those datasets whose upper resolution limit is between 0.0 and 3.0.
-2. `--max_rfree`: Process only those datasets whose assigned rfree is below this value. For example, `--max_rfree=3.0` will only process those datasets whose rfree is between 0 and 3.0.
+2. `--max_rfree`: Process only those datasets whose assigned rfree is below this value. For example, `--max_rfree=0.3` will only process those datasets whose rfree is between 0 and 0.3.
+3. `--use_rwork`: Filter based on rwork instead of rfree. The value given in `--max_rfree` is still used, so `--use_rwork=True --max_rfree=0.3` will filter to only those datasets for which the rwork is between 0.0 and 0.3.
 
 ### How to recover from Failed Runs
 
