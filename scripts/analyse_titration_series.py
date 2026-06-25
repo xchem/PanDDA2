@@ -108,7 +108,7 @@ def get_sample_grid(dataset, radius=1.5):
 
     # Scatter points
     rng = np.random.default_rng()
-    initial_samples = rng.uniform(sample_min, sample_max, 10000)
+    initial_samples = rng.uniform(sample_min, sample_max, (10000, 3))
 
     # Filter points
     deltas = initial_samples[:, np.newaxis, :, ] - pos_array[np.newaxis, :, :, ]
