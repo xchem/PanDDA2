@@ -4,6 +4,8 @@ from typing import TypedDict
 from pathlib import Path
 import time
 
+from rich import print as rprint
+
 from pandda_gemmi.args import PanDDATitrationSeriesArgs
 from pandda_gemmi.interfaces import *
 from pandda_gemmi.dataset import StructureArray
@@ -85,6 +87,7 @@ def get_datasets(args, input_yaml):
 def main(args):
     # Parse the input yaml
     input_yaml = parse_args(args)
+    rprint(input_yaml)
 
     # Record time at which PanDDA processing begins
     time_pandda_begin = time.time()
@@ -104,6 +107,8 @@ def main(args):
 
     # Get the datasets
     datasets, datasets_to_process = get_datasets(args, input_yaml)
+    rprint(datasets_to_process)
+
 
     # Create processor references to datasets and structure arrays
     dataset_refs = {_dtag: processor.put(datasets[_dtag]) for _dtag in datasets}
