@@ -109,16 +109,22 @@ def get_sample_grid(dataset, radius=1.5):
     # Scatter points
     rng = np.random.default_rng()
     initial_samples = rng.uniform(sample_min, sample_max, (10000, 3))
+    rprint('initial sample')
+    rprint(initial_samples.shape)
 
     # Filter points
     deltas = initial_samples[:, np.newaxis, :, ] - pos_array[np.newaxis, :, :, ]
+    rprint('deltas')
     rprint(deltas.shape)
     distances = np.linalg.norm(deltas, axis=1)
+    rprint('distances')
     rprint(distances.shape)
     closest_distances = np.min(distances, axis=-1)
+    rprint('closest distances')
     rprint(closest_distances.shape)
 
     samples = initial_samples[closest_distances < radius]
+    rprint('samples')
     rprint(samples.shape)
     rprint(samples)
     return samples
