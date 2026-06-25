@@ -145,7 +145,7 @@ def main(args):
         # compatability of structural models and similar resolution
         reference_series = {_dtag: _series_name  for _series_name in input_yaml['series'] for _dtag in input_yaml['series'][_series_name]}[dtag]
         comparator_datasets: Dict[str, DatasetInterface] = {
-            _dtag for _dtag in input_yaml['series'][reference_series]
+            _dtag: datasets[_dtag] for _dtag in input_yaml['series'][reference_series]
         }
         rprint('Comparator datasets')
         rprint(comparator_datasets)
