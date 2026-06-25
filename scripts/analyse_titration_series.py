@@ -134,8 +134,13 @@ def get_sample_grid(dataset, radius=1.5):
     return samples
     ...
 
-def get_samples(dmaps_dict, sample_grid):
-    ...
+def get_samples(dmaps_dict, reference_frame, sample_grid):
+    samples = {}
+    for dtag, sparse_xmap in dmaps_dict.items():
+        xmap = reference_frame.unmask(sparse_xmap)
+        samples[dtag] = [xmap.interpolate_value(gemmi.Position(*sample_point) for sample_point in sample_grid)]
+
+    return samples
 
 def save_samples(samples, concentration_series, output_dir):
     ...
@@ -290,6 +295,9 @@ def main(args):
 
         # Perform sampling
         samples = get_samples(dmaps_dict, sample_grid)
+        rprint('samples')
+        rprint(samples)
+        rprint({_dtag: np.median(_samples) for _dtag, _samples in samples.items()})
 
         # Save
         save_samples(samples, input_yaml['series'][reference_series], input_yaml['output_dir'])
