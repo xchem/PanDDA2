@@ -91,7 +91,6 @@ def get_sample_grid(dataset, radius=1.5):
     lig_res = None
     for chain in dataset.structure.structure[0]:
         for res in chain:
-            rprint(res.name)
             if res.name == 'LIG':
                 lig_res = res
 
@@ -101,7 +100,7 @@ def get_sample_grid(dataset, radius=1.5):
         if atom.element.name != 'H':
             pos = atom.pos
             poss.append([pos.x, pos.y, pos.z])
-    pos_array = np.array(pos)
+    pos_array = np.array(poss)
 
     # Define limits
     sample_min = np.min(pos_array, axis=0) - radius
