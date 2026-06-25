@@ -89,7 +89,7 @@ def get_datasets(args, input_yaml):
 def get_sample_grid(dataset, radius=1.5):
     # Get the ligand
     lig_res = None
-    for chain in dataset.structure:
+    for chain in dataset.structure.structure:
         for res in chain:
             if res.name == 'LIG':
                 lig_res = res
