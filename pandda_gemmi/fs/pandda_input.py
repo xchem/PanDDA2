@@ -220,9 +220,10 @@ class DatasetDir:
 
         # Decide whether to do checks based on whether dataset has been accepted
         check_input=True
-        if (output_dir / constants.PANDDA_PROCESSED_DATASETS_DIR / self.dtag).exists():
-            check_input = False
-
+        if output_dir:
+            if (output_dir / constants.PANDDA_PROCESSED_DATASETS_DIR / self.dtag).exists():
+                check_input = False
+        
         # Get pdb
         self.input_pdb_file = get_input_pdb_file(path, pdb_regex,check_input)
 
