@@ -36,7 +36,7 @@ class Input(TypedDict):
     output_path: Path
 
 def parse_args(args):
-    with open(args.options_yaml, 'r') as f:
+    with open(args.input_yaml, 'r') as f:
         data = yaml.safe_load(f)
 
     return data 
@@ -56,7 +56,7 @@ def get_datasets(args, input_yaml):
                 args.ligand_smiles_regex,
                 args.ligand_pdb_regex,
             )
-            for path in input_yaml.dataset_dir.glob("*")
+            for path in input_yaml['dataset_dir'].glob("*")
         ]
         if (dataset_dir.input_pdb_file and dataset_dir.input_mtz_file)
     }
@@ -73,11 +73,11 @@ def get_datasets(args, input_yaml):
     }
 
     datasets_to_process = {
-        input_yaml.series[series_name]: input_yaml.series[series_name][
-            max(input_yaml.series[series_name], key=lambda _dtag: input_yaml.series[series_name][_dtag])
+        input_yaml['series'][series_name]: input_yaml['series'][series_name][
+            max(input_yaml['series'][series_name], key=lambda _dtag: input_yaml['series'][series_name][_dtag])
             ]
         for series_name
-        in input_yaml.series
+        in input_yaml['series']
     }
 
     return datasets, datasets_to_process
