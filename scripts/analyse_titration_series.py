@@ -5,6 +5,7 @@ from pathlib import Path
 import time
 
 from rich import print as rprint
+import gemmi
 
 from pandda_gemmi.args import PanDDATitrationSeriesArgs
 from pandda_gemmi.interfaces import *
