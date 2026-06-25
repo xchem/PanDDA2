@@ -85,6 +85,54 @@ def get_datasets(args, input_yaml):
 
     return datasets, datasets_to_process
 
+# Get the sample grid
+def get_sample_grid(dataset, radius=1.5):
+    # Get the ligand
+    lig_res = None
+    for chain in dataset.structure:
+        for res in chain:
+            if res.name == 'LIG':
+                lig_res = res
+
+    # Get the heavy atom poss
+    poss = []
+    for atom in lig_res:
+        if atom.element.name != 'H':
+            pos = atom.pos
+            poss.append([pos.x, pos.y, pos.z])
+    pos_array = np.array(pos)
+
+    # Define limits
+    sample_min = np.min(pos_array, axis=0) - radius
+    sample_max = np.max(pos_array, axis=0) + radius
+
+    # Scatter points
+    rng = np.random.default_rng()
+    initial_samples = rng.uniform(sample_min, sample_max, 10000)
+
+    # Filter points
+    deltas = initial_samples[:, np.newaxis, :, ] - pos_array[np.newaxis, :, :, ]
+    rprint(deltas.shape)
+    distances = np.linalg.norm(deltas, axis=1)
+    rprint(distances.shape)
+    closest_distances = np.min(distances, axis=-1)
+    rprint(closest_distances.shape)
+
+    samples = initial_samples[closest_distances < radius]
+    rprint(samples.shape)
+    rprint(samples)
+    return samples
+    ...
+
+def get_samples(dmaps_dict, sample_grid):
+    ...
+
+def save_samples(samples, concentration_series, output_dir):
+    ...
+        
+def plot_samples(samples, concentration_series, output_dir):
+    ...
+
 def main(args):
     # Parse the input yaml
     input_yaml = parse_args(args)
@@ -226,6 +274,19 @@ def main(args):
             }
         )
         rprint(dmaps_dict)
+
+        # Get the sample grid
+        sample_grid = get_sample_grid(datasets[dtag])
+
+        # Perform sampling
+        samples = get_samples(dmaps_dict, sample_grid)
+
+        # Save
+        save_samples(samples, input_yaml['series'][reference_series], input_yaml['output_dir'])
+        
+        # Plot
+        plot_samples(samples, input_yaml['series'][reference_series], input_yaml['output_dir'])
+
 
     rprint('Done')
 
