@@ -105,7 +105,7 @@ def get_sample_grid(dataset, radius=1.5):
     # Define limits
     sample_min = np.min(pos_array, axis=0) - radius
     sample_max = np.max(pos_array, axis=0) + radius
-
+    rprint([sample_max, sample_min])
     # Scatter points
     rng = np.random.default_rng()
     initial_samples = rng.uniform(sample_min, sample_max, (10000, 3))
