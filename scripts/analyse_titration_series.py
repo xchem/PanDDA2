@@ -111,17 +111,21 @@ def get_sample_grid(dataset, radius=1.5):
     initial_samples = rng.uniform(sample_min, sample_max, (10000, 3))
     rprint('initial sample')
     rprint(initial_samples.shape)
+    rprint(initial_samples[0])
 
     # Filter points
     deltas = initial_samples[:, np.newaxis, :, ] - pos_array[np.newaxis, :, :, ]
     rprint('deltas')
     rprint(deltas.shape)
+    rprint(deltas[0])
     distances = np.linalg.norm(deltas, axis=1)
     rprint('distances')
     rprint(distances.shape)
+    rprint(distances[0])
     closest_distances = np.min(distances, axis=-1)
     rprint('closest distances')
     rprint(closest_distances.shape)
+    rprint(closest_distances[0])
 
     samples = initial_samples[closest_distances < radius]
     rprint('samples')
