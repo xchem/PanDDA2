@@ -138,7 +138,7 @@ def get_samples(dmaps_dict, reference_frame, sample_grid):
     samples = {}
     for dtag, sparse_xmap in dmaps_dict.items():
         xmap = reference_frame.unmask(sparse_xmap)
-        samples[dtag] = [xmap.interpolate_value(gemmi.Position(*sample_point) for sample_point in sample_grid)]
+        samples[dtag] = [xmap.interpolate_value(gemmi.Position(*sample_point)) for sample_point in sample_grid]
 
     return samples
 
