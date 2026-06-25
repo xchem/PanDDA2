@@ -144,6 +144,8 @@ def main(args):
         comparator_datasets: Dict[str, DatasetInterface] = {
             _dtag for _dtag in input_yaml['series'][reference_series]
         }
+        rprint('Comparator datasets')
+        rprint(comparator_datasets)
 
         # Ensure the dataset itself is included in comparators
         if dtag not in comparator_datasets:
