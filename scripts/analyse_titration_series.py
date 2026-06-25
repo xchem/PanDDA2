@@ -77,11 +77,11 @@ def get_datasets(args, input_yaml):
         in dataset_dirs.values()
     }
 
-    datasets_to_process = {
-        series_name: max(input_yaml['series'][series_name], key=lambda _dtag: input_yaml['series'][series_name][_dtag])
+    datasets_to_process = [
+        max(input_yaml['series'][series_name], key=lambda _dtag: input_yaml['series'][series_name][_dtag])
         for series_name
         in input_yaml['series']
-    }
+    ]
 
     return datasets, datasets_to_process
 
