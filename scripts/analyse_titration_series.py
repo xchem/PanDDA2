@@ -108,7 +108,10 @@ def main(args):
 
     # Get the datasets
     datasets, datasets_to_process = get_datasets(args, input_yaml)
+    rprint('Datasets to process')
     rprint(datasets_to_process)
+    rprint('Datasets')
+    rprint(datasets)
 
 
     # Create processor references to datasets and structure arrays
