@@ -225,6 +225,9 @@ def main(args):
                 in comparator_datasets
             }
         )
+        rprint(dmaps_dict)
+
+    rprint('Done')
 
         # 
 
