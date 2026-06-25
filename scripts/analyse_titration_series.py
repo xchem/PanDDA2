@@ -58,7 +58,7 @@ def get_datasets(args, input_yaml):
                 args.ligand_smiles_regex,
                 args.ligand_pdb_regex,
             )
-            for path in input_yaml['dataset_dir'].glob("*")
+            for path in Path(input_yaml['dataset_dir']).glob("*")
         ]
         if (dataset_dir.input_pdb_file and dataset_dir.input_mtz_file)
     }
