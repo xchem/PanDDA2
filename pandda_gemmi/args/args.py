@@ -966,7 +966,7 @@ class PanDDATitrationSeriesArgs(PanDDAKWArgs, PanDDATitrationPArgs):
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
 
-        PanDDAPArgs.add_parser_arguments(parser)
+        PanDDATitrationPArgs.add_parser_arguments(parser)
         PanDDAKWArgs.add_parser_arguments(parser)
 
         args = parser.parse_args()
