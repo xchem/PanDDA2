@@ -171,11 +171,6 @@ def main(args):
             time_begin_process_datasets
         )
 
-        # Skip if there are insufficient comparators in order to characterize a statistical model
-        if len(comparator_datasets) < args.min_characterisation_datasets:
-            console.insufficient_comparators(comparator_datasets)
-            return pandda_events, autobuilds
-
         # Get the alignments, and save them to the object store
         time_begin_get_alignments = time.time()
         alignments: Dict[str, AlignmentInterface] = processor.process_dict(
