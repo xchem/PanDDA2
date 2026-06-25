@@ -44,6 +44,8 @@ def parse_args(args):
     return data 
 
 def get_datasets(args, input_yaml):
+    all_dtags = [_dtag for _series_name in input_yaml['series'] for _dtag in input_yaml['series'][_series_name]]
+
     dataset_dirs = {
         dataset_dir.dtag: dataset_dir
         for dataset_dir
@@ -59,6 +61,7 @@ def get_datasets(args, input_yaml):
                 args.ligand_pdb_regex,
             )
             for path in Path(input_yaml['dataset_dir']).glob("*")
+            if path.name in all_dtags
         ]
         if (dataset_dir.input_pdb_file and dataset_dir.input_mtz_file)
     }
