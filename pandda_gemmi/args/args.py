@@ -971,7 +971,7 @@ class PanDDATitrationSeriesArgs(PanDDAKWArgs, PanDDATitrationPArgs):
 
         args = parser.parse_args()
 
-        return PanDDAArgs(
+        return PanDDATitrationSeriesArgs(
             input_yaml=args.input_yaml,
             pdb_regex=args.pdb_regex,
             mtz_regex=args.mtz_regex,
