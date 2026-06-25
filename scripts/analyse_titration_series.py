@@ -290,6 +290,9 @@ def main(args):
             }
         )
         rprint(dmaps_dict)
+        for _dtag, _dmap in dmaps_dict.items():
+            rprint(_dtag)
+            rprint([np.mean(_dmap.data), np.std(_dmap.data)])
 
         # Get the sample grid
         sample_grid = get_sample_grid(datasets[dtag])
