@@ -294,7 +294,7 @@ def main(args):
         sample_grid = get_sample_grid(datasets[dtag])
 
         # Perform sampling
-        samples = get_samples(dmaps_dict, sample_grid)
+        samples = get_samples(dmaps_dict, reference_frame, sample_grid)
         rprint('samples')
         rprint(samples)
         rprint({_dtag: np.median(_samples) for _dtag, _samples in samples.items()})
