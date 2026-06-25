@@ -91,6 +91,7 @@ def get_sample_grid(dataset, radius=1.5):
     lig_res = None
     for chain in dataset.structure.structure:
         for res in chain:
+            rprint(res.name)
             if res.name == 'LIG':
                 lig_res = res
 
