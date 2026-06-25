@@ -118,7 +118,7 @@ def get_sample_grid(dataset, radius=1.5):
     rprint('deltas')
     rprint(deltas.shape)
     rprint(deltas[0])
-    distances = np.linalg.norm(deltas, axis=1)
+    distances = np.linalg.norm(deltas, axis=-1)
     rprint('distances')
     rprint(distances.shape)
     rprint(distances[0])
