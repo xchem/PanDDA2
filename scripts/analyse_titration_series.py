@@ -103,12 +103,12 @@ def get_datasets(args, input_yaml, series):
     datasets_to_process = []
     for series_name in series:
         series_datasets = [x for x in series[series_name] if x in datasets_with_ligs]
+        rprint(f'{series_name} : {series_datasets}')
         if len(series_datasets) == 0:
             continue
 
         datasets_to_process.append(
             max(series_datasets, key=lambda _dtag: series[series_name][_dtag])
-
         )
 
     return datasets_with_ligs, datasets_to_process
