@@ -44,8 +44,18 @@ def parse_args(args):
 
     return data 
 
-def get_datasets(args, input_yaml):
-    all_dtags = [_dtag for _series_name in input_yaml['series'] for _dtag in input_yaml['series'][_series_name]]
+def get_series(input_yaml):
+    csv = pd.read_csv(input_yaml['series'])
+    titration_series = {}
+    for _idx, _row in csv.iterrows():
+        series, crystal, concentration = _row['Series'], _row['Crystal'], _row['Concentration']
+        if series not in titration_series:
+            titration_series[series] = {}
+        titration_series[series][dtag] = float(concentration)
+    return titration_series
+
+def get_datasets(args, input_yaml, series):
+    all_dtags = [_dtag for _series_name in series for _dtag in series[_series_name]]
 
     dataset_dirs = {
         dataset_dir.dtag: dataset_dir
@@ -79,9 +89,9 @@ def get_datasets(args, input_yaml):
     }
 
     datasets_to_process = [
-        max(input_yaml['series'][series_name], key=lambda _dtag: input_yaml['series'][series_name][_dtag])
+        max(series[series_name], key=lambda _dtag: series[series_name][_dtag])
         for series_name
-        in input_yaml['series']
+        in series
     ]
 
     return datasets, datasets_to_process
@@ -158,6 +168,11 @@ def main(args):
     input_yaml = parse_args(args)
     rprint(input_yaml)
 
+    # Get the titration series
+    series = get_series(input_yaml)
+    rprint('Titration series')
+    rprint(series)
+
     # Record time at which PanDDA processing begins
     time_pandda_begin = time.time()
 
@@ -175,7 +190,7 @@ def main(args):
     console.print_initialized_local_processor(args)
 
     # Get the datasets
-    datasets, datasets_to_process = get_datasets(args, input_yaml)
+    datasets, datasets_to_process = get_datasets(args, input_yaml, series)
     rprint('Datasets to process')
     rprint(datasets_to_process)
     rprint('Datasets')
@@ -211,9 +226,9 @@ def main(args):
 
         # Get the comparator datasets: these are filtered for reasonable data quality, space group compatability,
         # compatability of structural models and similar resolution
-        reference_series = {_dtag: _series_name  for _series_name in input_yaml['series'] for _dtag in input_yaml['series'][_series_name]}[dtag]
+        reference_series = {_dtag: _series_name  for _series_name in series for _dtag in series[_series_name]}[dtag]
         comparator_datasets: Dict[str, DatasetInterface] = {
-            _dtag: datasets[_dtag] for _dtag in input_yaml['series'][reference_series]
+            _dtag: datasets[_dtag] for _dtag in series[reference_series]
         }
         rprint('Comparator datasets')
         rprint(comparator_datasets)
@@ -308,10 +323,10 @@ def main(args):
         rprint({_dtag: np.median(_samples) for _dtag, _samples in samples.items()})
 
         # Save
-        save_samples(samples, input_yaml['series'][reference_series], input_yaml['output_dir'])
+        save_samples(samples, series[reference_series], input_yaml['output_dir'])
         
         # Plot
-        plot_samples(samples, input_yaml['series'][reference_series], input_yaml['output_dir'])
+        plot_samples(samples, series[reference_series], input_yaml['output_dir'])
 
 
     rprint('Done')
