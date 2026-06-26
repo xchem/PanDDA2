@@ -164,7 +164,7 @@ def get_samples(dmaps_dict, reference_frame, sample_grid):
     return samples
 
 def save_samples(samples, concentration_series, output_dir):
-    with open(Path(output_dir) / 'samples.yaml') as f:
+    with open(Path(output_dir) / 'samples.yaml', 'w') as f:
         yaml.dump(samples, f,)
         
 def plot_samples(samples, concentration_series, output_dir):
