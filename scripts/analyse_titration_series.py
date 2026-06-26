@@ -89,9 +89,20 @@ def get_datasets(args, input_yaml, series):
         in dataset_dirs.values()
     }
 
+    datasets_with_ligs = {}
+    for dtag, dataset in datasets.items():
+            lig_res = None
+            for chain in dataset.structure.structure[0]:
+                for res in chain:
+                    if res.name == 'LIG':
+                        lig_res = res
+            if lig_res is None:
+                datasets_with_ligs[dtag] = dataset 
+
+
     datasets_to_process = []
     for series_name in series:
-        series_datasets = [x for x in series[series_name] if x in datasets]
+        series_datasets = [x for x in series[series_name] if x in datasets_with_ligs]
         if len(series_datasets) == 0:
             continue
 
@@ -100,7 +111,7 @@ def get_datasets(args, input_yaml, series):
 
         )
 
-    return datasets, datasets_to_process
+    return datasets_with_ligs, datasets_to_process
 
 # Get the sample grid
 def get_sample_grid(dataset, radius=1.5):
