@@ -248,8 +248,8 @@ def main(args):
         comparator_datasets: Dict[str, DatasetInterface] = {
             _dtag: datasets[_dtag] for _dtag in series[reference_series] if _dtag in series
         }
-        # rprint('Comparator datasets')
-        # rprint(comparator_datasets)
+        rprint('Comparator datasets')
+        rprint(comparator_datasets)
 
         # Ensure the dataset itself is included in comparators
         if dtag not in comparator_datasets:
