@@ -89,11 +89,16 @@ def get_datasets(args, input_yaml, series):
         in dataset_dirs.values()
     }
 
-    datasets_to_process = [
-        max([x for x in series[series_name] if x in datasets], key=lambda _dtag: series[series_name][_dtag])
-        for series_name
-        in series
-    ]
+    datasets_to_process = []
+    for series_name in series:
+        series_datasets = [x for x in series[series_name] if x in datasets]
+        if len(series_datasets) == 0:
+            continue
+
+        datasets_to_process.append(
+            max(series_datasets, key=lambda _dtag: series[series_name][_dtag])
+
+        )
 
     return datasets, datasets_to_process
 
@@ -159,7 +164,8 @@ def get_samples(dmaps_dict, reference_frame, sample_grid):
     return samples
 
 def save_samples(samples, concentration_series, output_dir):
-    ...
+    with open(Path(output_dir) / 'samples.yaml') as f:
+        yaml.dump(samples, f,)
         
 def plot_samples(samples, concentration_series, output_dir):
     ...
