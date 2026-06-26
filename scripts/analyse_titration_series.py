@@ -231,10 +231,12 @@ def main(args):
     autobuilds = {}
 
     for _dtag in datasets_to_process:
+        reference_series = {_dtag: _series_name  for _series_name in series for _dtag in series[_series_name]}[dtag]
         comparator_datasets: Dict[str, DatasetInterface] = {
     _dtag: datasets[_dtag] for _dtag in series[reference_series] if _dtag in series
 }
         rprint(_dtag)
+        rprint(reference_series)
         rprint(comparator_datasets)
 
     time_begin_process_datasets = time.time()
