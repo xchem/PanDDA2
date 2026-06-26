@@ -163,8 +163,8 @@ def get_samples(dmaps_dict, reference_frame, sample_grid):
 
     return samples
 
-def save_samples(samples, concentration_series, output_dir):
-    with open(Path(output_dir) / 'samples.yaml', 'w') as f:
+def save_samples(samples, concentration_series, output_path):
+    with open(output_path, 'w') as f:
         yaml.dump(samples, f,)
         
 def plot_samples(samples, concentration_series, output_dir):
@@ -330,7 +330,7 @@ def main(args):
         rprint({_dtag: np.median(_samples) for _dtag, _samples in samples.items()})
 
         # Save
-        save_samples(samples, series[reference_series], input_yaml['output_dir'])
+        save_samples(samples, series[reference_series], Path(input_yaml['output_dir']) / f'{reference_series}_samples.yaml', )
         
         # Plot
         plot_samples(samples, series[reference_series], input_yaml['output_dir'])
