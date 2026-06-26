@@ -90,7 +90,7 @@ def get_datasets(args, input_yaml, series):
     }
 
     datasets_to_process = [
-        max(series[series_name], key=lambda _dtag: series[series_name][_dtag])
+        max([x for x in series[series_name] if x in datasets], key=lambda _dtag: series[series_name][_dtag])
         for series_name
         in series
     ]
@@ -229,7 +229,7 @@ def main(args):
         # compatability of structural models and similar resolution
         reference_series = {_dtag: _series_name  for _series_name in series for _dtag in series[_series_name]}[dtag]
         comparator_datasets: Dict[str, DatasetInterface] = {
-            _dtag: datasets[_dtag] for _dtag in series[reference_series]
+            _dtag: datasets[_dtag] for _dtag in series[reference_series] if _dtag in series
         }
         rprint('Comparator datasets')
         rprint(comparator_datasets)
