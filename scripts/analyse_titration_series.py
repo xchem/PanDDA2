@@ -122,32 +122,32 @@ def get_sample_grid(dataset, radius=1.5):
     # Define limits
     sample_min = np.min(pos_array, axis=0) - radius
     sample_max = np.max(pos_array, axis=0) + radius
-    rprint([sample_max, sample_min])
+    # rprint([sample_max, sample_min])
     # Scatter points
     rng = np.random.default_rng()
     initial_samples = rng.uniform(sample_min, sample_max, (10000, 3))
-    rprint('initial sample')
-    rprint(initial_samples.shape)
-    rprint(initial_samples[0])
+    # rprint('initial sample')
+    # rprint(initial_samples.shape)
+    # rprint(initial_samples[0])
 
     # Filter points
     deltas = initial_samples[:, np.newaxis, :, ] - pos_array[np.newaxis, :, :, ]
-    rprint('deltas')
-    rprint(deltas.shape)
-    rprint(deltas[0])
+    # rprint('deltas')
+    # rprint(deltas.shape)
+    # rprint(deltas[0])
     distances = np.linalg.norm(deltas, axis=-1)
-    rprint('distances')
-    rprint(distances.shape)
-    rprint(distances[0])
+    # rprint('distances')
+    # rprint(distances.shape)
+    # rprint(distances[0])
     closest_distances = np.min(distances, axis=-1)
-    rprint('closest distances')
-    rprint(closest_distances.shape)
-    rprint(closest_distances[0])
+    # rprint('closest distances')
+    # rprint(closest_distances.shape)
+    # rprint(closest_distances[0])
 
     samples = initial_samples[closest_distances < radius]
-    rprint('samples')
-    rprint(samples.shape)
-    rprint(samples)
+    # rprint('samples')
+    # rprint(samples.shape)
+    # rprint(samples)
     return samples
     ...
 
@@ -237,8 +237,8 @@ def main(args):
         comparator_datasets: Dict[str, DatasetInterface] = {
             _dtag: datasets[_dtag] for _dtag in series[reference_series] if _dtag in series
         }
-        rprint('Comparator datasets')
-        rprint(comparator_datasets)
+        # rprint('Comparator datasets')
+        # rprint(comparator_datasets)
 
         # Ensure the dataset itself is included in comparators
         if dtag not in comparator_datasets:
@@ -298,9 +298,9 @@ def main(args):
 
         # Load the locally aligned density maps and construct an array of them
         time_begin_get_dmaps = time.time()
-        print('Datasets to transform')
-        print(sorted([_dtag for _dtag in comparator_datasets]))
-        print(sorted([_dtag for _dtag in dataset_refs]))
+        # print('Datasets to transform')
+        # print(sorted([_dtag for _dtag in comparator_datasets]))
+        # print(sorted([_dtag for _dtag in dataset_refs]))
         dmaps_dict = processor.process_dict(
             {
                 _dtag: Partial(SparseDMapStream.parallel_load).paramaterise(
@@ -315,19 +315,19 @@ def main(args):
                 in comparator_datasets
             }
         )
-        rprint(dmaps_dict)
-        for _dtag, _dmap in dmaps_dict.items():
-            rprint(_dtag)
-            rprint([np.mean(_dmap.data), np.std(_dmap.data)])
+        # rprint(dmaps_dict)
+        # for _dtag, _dmap in dmaps_dict.items():
+        #     rprint(_dtag)
+        #     rprint([np.mean(_dmap.data), np.std(_dmap.data)])
 
         # Get the sample grid
         sample_grid = get_sample_grid(datasets[dtag])
 
         # Perform sampling
         samples = get_samples(dmaps_dict, reference_frame, sample_grid)
-        rprint('samples')
+        # rprint('samples')
         # rprint(samples)
-        rprint({_dtag: np.median(_samples) for _dtag, _samples in samples.items()})
+        # rprint({_dtag: np.median(_samples) for _dtag, _samples in samples.items()})
 
         # Save
         save_samples(samples, series[reference_series], Path(input_yaml['output_dir']) / f'{reference_series}_samples.yaml', )
