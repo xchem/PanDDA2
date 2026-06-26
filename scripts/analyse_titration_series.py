@@ -230,6 +230,13 @@ def main(args):
     pandda_events = {}
     autobuilds = {}
 
+    for _dtag in datasets_to_process:
+        comparator_datasets: Dict[str, DatasetInterface] = {
+    _dtag: datasets[_dtag] for _dtag in series[reference_series] if _dtag in series
+}
+        rprint(_dtag)
+        rprint(comparator_datasets)
+
     time_begin_process_datasets = time.time()
     console.start_process_shells()
     for j, dtag in enumerate(datasets_to_process):
