@@ -255,7 +255,7 @@ def main(args):
         # compatability of structural models and similar resolution
         reference_series = {_dtag: _series_name  for _series_name in series for _dtag in series[_series_name]}[dtag]
         comparator_datasets: Dict[str, DatasetInterface] = {
-            _dtag: datasets[_dtag] for _dtag in series[reference_series] if _dtag in series
+            _dtag: datasets[_dtag] for _dtag in series[reference_series] 
         }
         rprint('Comparator datasets')
         rprint(comparator_datasets)
