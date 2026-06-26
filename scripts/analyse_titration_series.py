@@ -96,7 +96,7 @@ def get_datasets(args, input_yaml, series):
                 for res in chain:
                     if res.name == 'LIG':
                         lig_res = res
-            if lig_res is None:
+            if lig_res is not None:
                 datasets_with_ligs[dtag] = dataset 
 
 
