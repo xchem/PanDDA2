@@ -52,7 +52,7 @@ def get_series(input_yaml):
         series, crystal, concentration = _row['Series'], _row['Crystal'], _row['Concentration']
         if series not in titration_series:
             titration_series[series] = {}
-        titration_series[series][dtag] = float(concentration)
+        titration_series[series][crystal] = float(concentration)
     return titration_series
 
 def get_datasets(args, input_yaml, series):
