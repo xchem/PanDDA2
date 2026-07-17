@@ -603,13 +603,6 @@ class HeirarchicalSiteModelAlignedSequences:
             t=self.t,
             criterion="distance",
         )
-        # clusters = fclusterdata(
-        #     ,
-            
-        #     # method="centroid"
-        #     method="complete",
-            
-        # )
 
         # Get the event sites
         event_clusters = {}
@@ -627,6 +620,7 @@ class HeirarchicalSiteModelAlignedSequences:
         # that cluster with old ones. Keep any known events in their sites regardless of new clustering.
         allocated_events = []
         if existing_sites:
+            print(f'Allocating sites from existing sites')
             allocated_events = [
                 (_row['dtag'], int(_row['event_idx']))
                  for _row
@@ -668,6 +662,11 @@ class HeirarchicalSiteModelAlignedSequences:
                 for _event_id in new_overlapping_events:
                     allocated_events.append(_event_id)
 
+        print('Initial sites')
+        print(sites)
+        print('Events allocated to initial sites')
+        print(allocated_events)
+
         if self.debug:
             print('event_id_array')
             print(event_id_array)
@@ -691,10 +690,6 @@ class HeirarchicalSiteModelAlignedSequences:
 
                 sites[len(sites)+1] = Site(
                     new_site_events,
-                    # np.mean(
-                    #     centroid_array[clusters==cluster, :],
-                    #     axis=0,
-                    # ).flatten(),
                     np.array([0.0,0.0,0.0])
                 )
 

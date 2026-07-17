@@ -42,6 +42,8 @@ def postrun(
     if inspect_table_file.exists():
         inspect_events_table = pd.read_csv(inspect_table_file)
         inspect_sites_table = pd.read_csv(inspect_sites_file)
+        print(f'Found existing sites')
+        print(inspect_sites_table)
         existing_events = {(_row['dtag'], int(_row['event_idx'])): _row for _idx, _row in inspect_events_table.iterrows()}
         existing_sites = {
             _row['site_idx']: _row
@@ -49,6 +51,7 @@ def postrun(
             in inspect_sites_table.iterrows()
         }
     else:
+        print(f'Found no existing PanDDA Results at {inspect_table_file}')
         existing_events = None
         existing_sites = None
 
