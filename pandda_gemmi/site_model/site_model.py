@@ -594,7 +594,8 @@ class HeirarchicalSiteModelAlignedSequences:
         # Cluster the centroids
         linkage = scipy.cluster.hierarchy.linkage(
             scipy.spatial.distance.squareform(distance_matrix),
-            method='complete',
+            # method='complete',
+            method='single',
             optimal_ordering=True
             # metric='chebyshev'
         )
@@ -612,7 +613,6 @@ class HeirarchicalSiteModelAlignedSequences:
                 event_clusters[(str(event_id[0]), int(event_id[1]))] = j
         rprint('event clusters')
         rprint(event_clusters)
-
 
         sites = {}
 
