@@ -100,6 +100,7 @@ def process_dataset(
 
     # Get the comparator datasets: these are filtered for reasonable data quality, space group compatability,
     # compatability of structural models and similar resolution
+    print('Getting comparator datasets')
     comparator_datasets: Dict[str, DatasetInterface] = get_comparators(
         datasets,
         [
@@ -109,6 +110,7 @@ def process_dataset(
             FilterResolution(dataset_res, args.max_shell_datasets, 100, args.high_res_buffer)],
         debug=args.debug
     )
+    print(f'Got {len(comparator_datasets)} comparator datasets!')
 
     # Ensure the dataset itself is included in comparators
     if dtag not in comparator_datasets:
@@ -138,6 +140,7 @@ def process_dataset(
 
     # Get the alignments, and save them to the object store
     time_begin_get_alignments = time.time()
+    print(f'Performing alignments...')
     alignments: Dict[str, AlignmentInterface] = processor.process_dict(
         {_dtag: Partial(Alignment.from_structure_arrays).paramaterise(
             _dtag,
@@ -151,6 +154,7 @@ def process_dataset(
     # print(f"\t\tGot alignments in: {round(time_finish_get_alignments - time_begin_get_alignments, 2)}")
 
     # Get the reference frame and save it to the object store
+    print(f'Getting Dframe')
     time_begin_get_frame = time.time()
     reference_frame: DFrame = DFrame(dataset, processor, debug=args.debug)
     reference_frame_ref = processor.put(reference_frame)
@@ -159,6 +163,7 @@ def process_dataset(
     # print(f"\t\tGot reference frame in: {round(time_finish_get_frame - time_begin_get_frame, 2)}")
 
     # Get the transforms to apply to the dataset before locally aligning and save them to the object store
+    print(f'Getting xmaps...')
     transforms = [
         TruncateReflections(
             comparator_datasets,
@@ -208,14 +213,14 @@ def process_dataset(
     raw_xmap_sparse_ref = processor.put(raw_xmap_sparse)
     raw_xmap_array = np.array(raw_xmap_grid, copy=True)
     raw_xmap_array_ref = processor.put(raw_xmap_array)
-    # raw_xmap_grid = reference_frame.unmask(
-    #     raw_xmap_sparse
-    # )
+
 
     # Get the masked grid of the structure
+    print(f'Getting model grid...')
     model_grid = get_model_map(dataset.structure.structure, xmap_grid)
 
     # Get the Comparator sets that define the models to try
+    print(f'Getting characterization sets...')
     time_begin_get_characterization_sets = time.time()
     characterization_sets: Dict[int, Dict[str, DatasetInterface]] = get_characterization_sets(
         dtag,
@@ -235,6 +240,7 @@ def process_dataset(
     # Filter the models which are clearly poor descriptions of the density
     # In theory this step could result in the exclusion of a ground state model which provided good contrast
     # for a ligand binding in one part of the protein but fit poorly to say a large disordered region
+    print(f'Filtering characterization sets...')
     models_to_process, model_scores, characterization_set_masks = filter_characterization_sets(
         comparator_datasets,
         characterization_sets,
@@ -247,6 +253,7 @@ def process_dataset(
     # print(f"Models to process are {models_to_process} out of {[x for x in characterization_sets]}")
 
     # Plot the projections
+    print(f'Getting UMAP plot...')
     umap_plot_out_dir = fs.output.processed_datasets[dtag] / "model_umap"
     if not umap_plot_out_dir.exists():
         os.mkdir(umap_plot_out_dir)
@@ -270,6 +277,7 @@ def process_dataset(
 
     # Process the models: calculating statistical maps; using them to locate events; filtering, scoring and re-
     # filtering those events and returning those events and unpacking them
+    print(f'Processing models...')
     time_begin_process_models = time.time()
     model_maps_dir = fs.output.processed_datasets[dtag] / 'model_maps'
     if not model_maps_dir.exists():
