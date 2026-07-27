@@ -8,7 +8,6 @@ install(show_locals=True)
 import scipy
 import matplotlib.pyplot as plt
 
-# import networkx as nx
 
 
 from ..interfaces import *
@@ -68,7 +67,6 @@ from .site import Site
 #         sites = {}
 #         for cluster_num in unique_clusters:
 #             site_event_ids = event_array[clusters == cluster_num]
-#             # print([event_id for event_id in site_event_ids])
 #             site_positions = np.concatenate([events[(str(event_id[0]), int(event_id[1]))].pos_array for event_id in site_event_ids], axis=0)
 #
 #             sites[j] = Site(
@@ -777,7 +775,6 @@ class HeirarchicalSiteModelAlignedSequences:
 #         sites = {}
 #         for cluster_num in unique_clusters:
 #             site_event_ids = event_array[clusters == cluster_num]
-#             # print([event_id for event_id in site_event_ids])
 #             site_positions = np.concatenate(
 #                 [events[(str(event_id[0]), int(event_id[1]))].pos_array for event_id in site_event_ids], axis=0)
 #

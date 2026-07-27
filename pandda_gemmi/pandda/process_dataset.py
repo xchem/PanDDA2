@@ -2,13 +2,6 @@ import os
 import shutil
 import time
 
-# try:
-#     from sklearnex import patch_sklearn
-#
-#     patch_sklearn()
-# except ImportError:
-#     print('No sklearn-express available!')
-
 import numpy as np
 
 from pandda_gemmi.interfaces import *
@@ -182,9 +175,6 @@ def process_dataset(
 
     # Load the locally aligned density maps and construct an array of them
     time_begin_get_dmaps = time.time()
-    print('Datasets to transform')
-    print(sorted([_dtag for _dtag in comparator_datasets]))
-    print(sorted([_dtag for _dtag in dataset_refs]))
     dmaps_dict = processor.process_dict(
         {
             _dtag: Partial(SparseDMapStream.parallel_load).paramaterise(
@@ -201,13 +191,12 @@ def process_dataset(
     )
     dmaps = np.vstack([_dmap.data.reshape((1, -1)) for _dtag, _dmap in dmaps_dict.items()])
     if args.debug:
-        print('Aligned dmap stats')
+        print(f'Aligned dmap stats')
         for _dtag, _dmap in dmaps_dict.items():
             arr = _dmap.data
             print(f'{dtag} stats: min {np.min(arr)} max {np.max(arr)} mean {np.mean(arr)}')
     time_finish_get_dmaps = time.time()
     # TODO: log properly
-    # print(f"\t\tGot dmaps in: {round(time_finish_get_dmaps - time_begin_get_dmaps, 2)}")
     dtag_array = np.array([_dtag for _dtag in comparator_datasets])
 
     # Get the dataset dmap, both processed and unprocessed
@@ -314,7 +303,6 @@ def process_dataset(
             model_events[model_number] = result[0]
         model_means[model_number] = result[1]
         model_zs[model_number] = result[2]
-        # print(f'z map stats: {np.min(result[2])} {np.max(result[2])} {np.median(result[2])}')
         model_stds[model_number] = result[3]
         model_metas[model_number] = result[4]
 
@@ -377,7 +365,6 @@ def process_dataset(
             os.mkdir(out_dir)
 
         # Perform autobuilds of events
-        # print(f"Have {len(builds_to_perform)} builds to perform!")
         builds = processor.process_dict(
             {
                 _model_event_id: Partial(autobuild_conformer).paramaterise(
@@ -420,7 +407,6 @@ def process_dataset(
         for build_key, result in builds.items():
             for path, build in result.items():
                 model_number, event_number, ligand_key, conformer_number = build_key
-                # print([x for x in build.keys()])
                 dmaps = {
                     'zmap': build['arr'][0][0],
                     'xmap': build['arr'][0][1],
@@ -493,8 +479,7 @@ def process_dataset(
                 new_centroid = [round(float(x), 2) for x in event.build.centroid]
                 scores = [round(float(event.score), 2), round(float(event.build.score), 2)]
                 bdcs = [round(float(event.bdc), 2), round(float(event.build.bdc), 2)]
-                # print(
-                #     f"{model_number} : {event_number} : {old_centroid} : {new_centroid} : {scores} : {bdcs} : {Path(event.build.build_path).name}")
+
                 event.centroid = event.build.centroid
                 event.bdc = event.build.bdc
 
@@ -575,12 +560,7 @@ def process_dataset(
             )
         }
     # Output event maps and model maps
-    time_begin_output_maps = time.time()
-    # print(
-    #     f'z map stats: {np.min(model_zs[selected_model_num])} {np.max(model_zs[selected_model_num])} {np.median(model_zs[selected_model_num])} {np.sum(np.isnan(model_zs[selected_model_num]))}')
 
-    # for event in top_selected_model_events.values():
-    #     print(f'{event.bdc} : {event.build.bdc}')
     output_maps(
         dtag,
         fs,

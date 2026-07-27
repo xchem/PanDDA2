@@ -63,7 +63,6 @@ def mask_xmap_radial(xmap: GridI, x: float, y: float, z: float, radius: float = 
 #
 #         score = F.softmax(self.fc(full_encoding))
 #
-#         print(score)
 #
 #         return float(score[0][1])
 

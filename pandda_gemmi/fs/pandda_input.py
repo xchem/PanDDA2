@@ -104,7 +104,6 @@ def parse_dir_ligands(path: Path, ligand_cif_regex, ligand_smiles_regex, ligand_
                     str(pattern),
                     str(name),
             ):
-                # print(f"Skipping ligand file: {file_path}")
                 skip = True
                 print(f'Ligand name: {name} matches a ligand ignore regex! Skipping!')
         if skip:
@@ -176,9 +175,7 @@ def get_input_ligands(path: Path, ligand_dir_regex, ligand_cif_regex, ligand_smi
         # already handled above.
         if not ligand_dir_path.is_dir():
             continue
-        # print(f"Attempting match of {ligand_dir_path.name} to {ligand_dir_regex}")
         match = re.match(str(ligand_dir_regex), str(ligand_dir_path.name))
-        # print(f"Match: {match}")
         if match:
             ligand_dir_ligands = parse_dir_ligands(
                 ligand_dir_path,
@@ -187,8 +184,6 @@ def get_input_ligands(path: Path, ligand_dir_regex, ligand_cif_regex, ligand_smi
                 ligand_pdb_regex,
                 check_input
             )
-            # print(f"Matched ligand dir with {len(ligand_dir_ligands)} ligands!!")
-            # path_ligands.update(ligand_dir_ligands)
             for ligand_key, ligand_files in ligand_dir_ligands.items():
                 # Only update if more complete
                 if ligand_key in path_ligands:

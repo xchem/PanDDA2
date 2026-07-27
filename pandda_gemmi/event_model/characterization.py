@@ -29,21 +29,6 @@ def get_characterization_sets(
     # Get the
     characterization_sets = characterization_model(dtag_array, dmaps, reference_frame)
 
-    # Get the characterization sets from dmap mask
-    # characterization_sets = {}
-    #
-    # # Get the clusters and their membership numbers
-    # unique_classes, counts = np.unique(classes, return_counts=True)
-    # # print(f"Unique classes : {unique_classes} : counts : {counts}")
-    # j = 0
-    # for unique_class, count in zip(unique_classes, counts):
-    #     if unique_class < 1:
-    #         continue
-    #     if count >= min_size:
-    #         class_dtags = dtag_array[classes == unique_class]
-    #         characterization_sets[j] = [str(_dtag) for _dtag in class_dtags]
-    #         j = j + 1
-
     return characterization_sets
 
 
@@ -85,36 +70,6 @@ class CharacterizationNN:
         nbrs = NearestNeighbors(n_neighbors=self.n_neighbours).fit(transformed)
         distances, indices = nbrs.kneighbors(transformed)
         time_finish_fit = time.time()
-        # print(f"Nearest neighbours fit on pca dimension in time: {time_finish_fit - time_begin_fit}")
-
-        # time_begin_fit = time.time()
-        # # # Transform the data to a reasonable size for a GMM
-        # pca = PCA(n_components=min(100, min(sparse_dmap_inner_array.shape)), svd_solver="arpack")
-        # transformed = pca.fit_transform(sparse_dmap_inner_array)
-        #
-        # # # Fit the Dirichlet Process Gaussian Mixture Model and predict component membership
-        # nbrs = NearestNeighbors(n_neighbors=self.n_neighbours).fit(transformed)
-        # distances, indices = nbrs.kneighbors(transformed)
-        # time_finish_fit = time.time()
-        # print(f"Nearest neighbours fit on arpack pca dimension in time: {time_finish_fit - time_begin_fit}")
-        #
-        # time_begin_fit = time.time()
-        # # # Transform the data to a reasonable size for a GMM
-        # pca = IncrementalPCA(n_components=min(100, min(sparse_dmap_inner_array.shape)), batch_size=100)
-        # transformed = pca.fit_transform(sparse_dmap_inner_array)
-        #
-        # # # Fit the Dirichlet Process Gaussian Mixture Model and predict component membership
-        # nbrs = NearestNeighbors(n_neighbors=self.n_neighbours).fit(transformed)
-        # distances, indices = nbrs.kneighbors(transformed)
-        # time_finish_fit = time.time()
-        # print(f"Nearest neighbours fit on ipca dimension in time: {time_finish_fit - time_begin_fit}")
-
-        # Fit the Dirichlet Process Gaussian Mixture Model and predict component membership
-        # time_begin_fit = time.time()
-        # nbrs = NearestNeighbors(n_neighbors=self.n_neighbours, n_jobs=-1).fit(sparse_dmap_inner_array)
-        # distances, indices = nbrs.kneighbors(sparse_dmap_inner_array)
-        # time_finish_fit = time.time()
-        # print(f"Nearest neighbours fit on full dimension in time: {time_finish_fit-time_begin_fit}")
 
         # Get neighbourhood radii
         radii = {}
@@ -150,7 +105,6 @@ class CharacterizationNN:
 
         # Get the clusters and their membership numbers
         unique_classes, counts = np.unique(predicted, return_counts=True)
-        # print(f"Unique classes : {unique_classes} : counts : {counts}")
         j = 1
         for unique_class, count in zip(unique_classes, counts):
             if unique_class < 1:

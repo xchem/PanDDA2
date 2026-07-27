@@ -48,12 +48,10 @@ class FilterCluster:
             [np.mean(event.pos_array, axis=0).flatten() for event in events.values()])
 
         # Cluster the event centroids
-        # print(f"event_centroid_array shape: {event_centroid_array.shape}")
         clusters = fclusterdata(
             event_centroid_array,
             t=self.t,
             criterion="distance",
-            # method="centroid"
             method="complete"
 
         )
@@ -118,26 +116,21 @@ class FilterLocallyHighestScoring:
         )
 
         event_id_array = np.array([event_id for event_id in events.keys()])
-        # print(f"Event id array shape: {event_id_array.shape}")
 
         masked_ids = np.zeros(event_id_array.shape, dtype=bool)
         j = 0
         new_events = {}
         for event_id in sorted(events, key=lambda _event_id: events[_event_id].score, reverse=True):
             if np.any(event_id_array[masked_ids] == event_id):
-                # print(f"Within a radius {event_id}!")
                 continue
             event = events[event_id]
             centroid = np.mean(event.pos_array, axis=0)
             distances = np.linalg.norm(centroid_array - centroid, axis=1)
-            # print(f"Distances shape: {distances.shape}")
 
             distance_mask = distances < self.radius
             masked_ids[distance_mask] = True
             new_events[j] = event
             j = j+1
-        # for event_id, event in new_events.items():
-        #     print(f"\t{event_id} : {np.mean(event.pos_array, axis=0)}")
 
         return new_events
 
@@ -150,13 +143,6 @@ class FilterLocallyHighestBuildScoring:
         if len(events) == 0:
             return {}
 
-        # centroid_array = np.array(
-        #     [
-        #         np.mean(event.pos_array, axis=0)
-        #         for event
-        #         in events.values()
-        #     ]
-        # )
         centroid_array = np.array(
             [
                 event.centroid
@@ -166,7 +152,6 @@ class FilterLocallyHighestBuildScoring:
         )
 
         event_id_array = np.array([event_id for event_id in events.keys()])
-        # print(f"Event id array shape: {event_id_array.shape}")
 
         masked_ids = np.zeros(event_id_array.shape, dtype=bool)
         j = 0
@@ -236,20 +221,6 @@ class FilterSymmetryPosBuilds:
                                 dist = atom_2_pos.dist(atom_1_pos)
                                 dists.append(dist)
 
-
-                            # marks = ns.find_neighbors(atom, min_dist=0.0, max_dist=self.radius+1.0)
-                            # print(f"\t\t\t{atom_pos.x} {atom_pos.y} {atom_pos.z}")
-                            # for mark in marks:
-                            #     print(f"\t\t\t\t{mark.x} {mark.y} {mark.z} {mark.image_idx}")
-                            #     mark_pos = gemmi.Position(mark.x, mark.y, mark.z)
-                            #     cra = mark.to_cra(st[0])
-                            #     original_atom_pos = cra.atom.pos
-                            #     # Probably symmetry image, get distance to it
-                            #     if mark_pos.dist(original_atom_pos) > 0.0001:
-                            #         dists.append(mark_pos.dist(atom_pos))
-
-            # print(f"Distances: {dists}")
-
             # Don't filter no sym atoms near
             if len(dists) == 0:
                 new_events[event_id] = event
@@ -281,25 +252,20 @@ class FilterLocallyHighestLargest:
         )
 
         event_id_array = np.array([event_id for event_id in events.keys()])
-        # print(f"Event id array shape: {event_id_array.shape}")
 
         masked_ids = np.zeros(event_id_array.shape, dtype=bool)
         j = 0
         new_events = {}
         for event_id in sorted(events, key=lambda _event_id: events[_event_id].pos_array.size, reverse=True):
             if np.any(event_id_array[masked_ids] == event_id):
-                # print(f"Within a radius {event_id}!")
                 continue
             event = events[event_id]
             centroid = np.mean(event.pos_array, axis=0)
             distances = np.linalg.norm(centroid_array - centroid, axis=1)
-            # print(f"Distances shape: {distances.shape}")
 
             distance_mask = distances < self.radius
             masked_ids[distance_mask] = True
             new_events[j] = event
             j = j+1
-        # for event_id, event in new_events.items():
-        #     print(f"\t{event_id} : {np.mean(event.pos_array, axis=0)}")
 
         return new_events

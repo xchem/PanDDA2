@@ -1,12 +1,6 @@
 import time
 import os
 
-# try:
-#     from sklearnex import patch_sklearn
-#
-#     patch_sklearn()
-# except ImportError:
-#     print('No sklearn-express available!')
 
 import numpy as np
 import gemmi
@@ -127,10 +121,6 @@ class ProcessModel:
 
         # Score the events with some method such as the CNN
         time_begin_score_events = time.time()
-        # events = score(ligand_files, events, xmap_grid, raw_xmap_grid, mean_grid, z_grid, model_grid,
-        #                median, reference_frame, homogenized_dataset_dmap_array, mean
-        #                )
-        print(f'{self.use_ligand_data} {type(self.use_ligand_data)} {self.use_ligand_data == True}')
         if self.use_ligand_data:
             for lid, ligand_data in ligand_files.items():
                 confs = get_conformers(ligand_data)
@@ -145,7 +135,6 @@ class ProcessModel:
                     if event_score > event.score:
                         event.score = event_score
                     _x, _y, _z, = event.centroid
-                    # print(f'\t {model_number}_{event_id}_{lid}: ({_x}, {_y}, {_z}): {round(event_score, 5)}')
 
                     # dmaps = {
                     #     'zmap': map_array[0][0],
@@ -205,7 +194,6 @@ class ProcessModel:
         # Renumber the events
         events = {j + 1: event for j, event in enumerate(events.values())}
 
-        # print(f'z map stats: {np.min(z)} {np.max(z)} {np.median(z)} {np.sum(np.isnan(z))}')
 
         meta = {
             'Number of Initial Events': num_initial_events,

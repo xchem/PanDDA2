@@ -53,7 +53,6 @@ def merge_autobuilds(
         dataset = datasets[dtag]
         dtag_events = [event_id for event_id in events if event_id[0] == dtag]
         dtag_autobuilds = [[event_id, autobuilds[event_id]] for event_id in dtag_events]
-        # print(dtag_autobuilds)
 
         if len(dtag_events) == 0:
             continue
@@ -65,7 +64,6 @@ def merge_autobuilds(
                 if autobuild_result:
 
                     if autobuild_result.log_result_dict:
-                        # print(f"\t\t\t{autobuild_result.log_result_dict}")
 
                         for build_path, result in autobuild_result.log_result_dict.items():
                             score = result['score']
@@ -73,7 +71,6 @@ def merge_autobuilds(
 
         #
         if len(all_autobuilds) == 0:
-            # print(f"\t\tNo autobuilds generated for dataset: {dtag}")
             continue
 
         #
@@ -83,7 +80,6 @@ def merge_autobuilds(
         )
         if selected_build_path == None:
             continue
-        # print(f"\tSlected build path: {selected_build_path}")
         model_building_dir = fs.output.processed_datasets[dtag] / constants.PANDDA_MODELLED_STRUCTURES_DIR
         model_file = model_building_dir / constants.PANDDA_EVENT_MODEL.format(dtag)
 
@@ -133,7 +129,6 @@ class MergeHighestEventScore:
             in autobuilds.items()
             if highest_scoring_event_id[1] == score_and_event_id[1][1]
         }
-        # print(highest_scoring_event_autobuilds)
         if len(highest_scoring_event_autobuilds) == 0:
             return None
         else:
@@ -171,7 +166,6 @@ class MergeHighestBuildScore:
             in autobuilds.items()
             if highest_scoring_event_id[1] == score_and_event_id[1][1]
         }
-        # print(highest_scoring_event_autobuilds)
         if len(highest_scoring_event_autobuilds) == 0:
             return None
         else:
@@ -196,7 +190,6 @@ class MergeHighestBuildAndEventScore:
             in autobuilds.items()
             if highest_scoring_event_id[1] == score_and_event_id[1][1]
         }
-        # print(highest_scoring_event_autobuilds)
         return max(
             highest_scoring_event_autobuilds,
             key=lambda _path: -highest_scoring_event_autobuilds[_path],

@@ -29,9 +29,7 @@ dt = np.dtype([('h', 'i4'), ('k', 'i4'),('l', 'i4'),])
 #                         columns=reflections.column_labels(),
 #                         )
 #     data.set_index(["H", "K", "L"], inplace=True)
-#     # print(data)
-#     # print(self.reflections.make_miller_array().shape)
-#
+
 #     # Truncate by index
 #     data_indexed = data.loc[index]
 #
@@ -43,14 +41,12 @@ dt = np.dtype([('h', 'i4'), ('k', 'i4'),('l', 'i4'),])
 #                           data_dropped_array,
 #                           ]
 #                          )
-#     # print(new_data)
 #
 #     # Update
 #     new_reflections.set_data(new_data)
 #
 #     # Update resolution
 #     new_reflections.update_reso()
-#     # print(new_reflections.make_miller_array().shape)
 #
 #     return new_reflections
 
@@ -75,9 +71,7 @@ dt = np.dtype([('h', 'i4'), ('k', 'i4'),('l', 'i4'),])
 #     #                     )
 #     # data.set_index(["H", "K", "L"], inplace=True)
 #     # hkl_array = data_array[:, 0:3]
-#     # print(data)
-#     # print(self.reflections.make_miller_array().shape)
-#
+
 #     # Truncate by index
 #     # data_indexed = data.loc[index]
 #
@@ -91,14 +85,12 @@ dt = np.dtype([('h', 'i4'), ('k', 'i4'),('l', 'i4'),])
 #     #                      )
 #     structured_data_array = rfn.unstructured_to_structured(data_array[:, 0:3], dt)
 #     new_data = data_array[np.in1d(structured_data_array, index)]
-#     # print(new_data)
 #
 #     # Update
 #     new_reflections.set_data(new_data)
 #
 #     # Update resolution
 #     new_reflections.update_reso()
-#     # print(new_reflections.make_miller_array().shape)
 #
 #     return new_reflections
 
@@ -123,8 +115,6 @@ def truncate_reflections(reflections, index=None):
     #                     )
     # data.set_index(["H", "K", "L"], inplace=True)
     # hkl_array = data_array[:, 0:3]
-    # print(data)
-    # print(self.reflections.make_miller_array().shape)
 
     # Truncate by index
     # data_indexed = data.loc[index]
@@ -159,17 +149,14 @@ def truncate_reflections(reflections, index=None):
     mask = data_array_3d[(data_hkl[:,0]-min_coord[0], data_hkl[:, 1]-min_coord[1], data_hkl[:, 2]-min_coord[2])]
     mask_non_zero = np.nonzero(mask)[0].size
 
-    # structured_data_array = rfn.unstructured_to_structured(data_array[:, 0:3], dt)
-    # new_data = data_array[np.in1d(structured_data_array, index)]
+
     new_data = data_array[mask]
-    # print(new_data)
 
     # Update
     new_reflections.set_data(new_data.astype(np.float32))
 
     # Update resolution
     new_reflections.update_reso()
-    # print(new_reflections.make_miller_array().shape)
 
     return new_reflections, mask_non_zero
 
@@ -398,23 +385,5 @@ class TruncateReflections:
             name=dataset.name
         )
         finish_truncate_reflections = time.time()
-        # print(f"\t\tTruncate: {finish_truncate_reflections-begin_truncate_reflections}")
 
         return new_dataset
-
-        # # truncate on reflections
-        # new_datasets_reflections = {}
-        # for dtag in dataset_resolution_truncated:
-        #     reflections = dataset_resolution_truncated[dtag].reflections.reflections
-        #     reflections_array = np.array(reflections)
-        #
-        #     print(f"Truncated reflections: {dtag}")
-        #     truncated_dataset = dataset_resolution_truncated[dtag].truncate_reflections(common_reflections_set,
-        #                                                                                 )
-        #     truncated_dataset = truncate_reflections(reflections, index)
-        #     reflections = truncated_dataset.reflections.reflections
-        #     reflections_array = np.array(reflections)
-        #
-        #     new_datasets_reflections[dtag] = truncated_dataset
-        #
-        # return new_datasets_reflections

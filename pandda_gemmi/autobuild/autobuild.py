@@ -160,7 +160,6 @@ def autobuild(
         #         dataset.reflections.resolution()
         #     )
         #     autobuild_result.log_result_dict[path] = rscc
-        #     print(f"{path}: {rscc}")
         #
         autobuild_results[ligand_key] = autobuild_result
 

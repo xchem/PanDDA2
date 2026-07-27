@@ -32,9 +32,7 @@ def postrun(
         event_score_quantiles,
         time_pandda_begin
 ):
-    # TODO: Log properly
-    # print(
-    #     f"Processed {len(datasets)} datasets in {round(time_finish_process_datasets - time_begin_process_datasets, 2)}")
+    # TODO: Log properly time taken
 
     # Get existing site and event data (if it exists)
     inspect_table_file = fs.output.analyses_dir / constants.PANDDA_INSPECT_EVENTS_PATH
@@ -89,10 +87,7 @@ def postrun(
         existing_events,
         existing_sites
     )
-    # TODO: Log properly
-    # print("Sites")
-    # for site_id, site in sites.items():
-    #     print(f"{site_id} : {site.centroid} : {site.event_ids}")
+    # TODO: Log properly sites
 
     # Rank the events for display in PanDDA inspect
     ranking = rank_events(
@@ -101,10 +96,6 @@ def postrun(
         autobuilds,
         RankHighEventScoreBySite(),
     )
-    # for event_id in ranking:
-    #     print(f"{event_id} : {round(pandda_events[event_id].build.score, 2)}"    if args.debug:
-    #         print('Processed Datasets')
-    #         print(fs.output.processed_datasets))
 
     # Probabilities
     # Calculate the cumulative probability that a hit remains in the site using the event score quantile table
@@ -113,5 +104,5 @@ def postrun(
     # Output the event and site tables
     output_tables(datasets, pandda_events, ranking, sites, hit_in_site_probabilities, fs, existing_events, existing_sites, args.debug)
     time_pandda_finish = time.time()
-    # TODO: Log properly
+    # TODO: Log properly pandda run time
     print(f"PanDDA ran in: {round(time_pandda_finish - time_pandda_begin, 2)} seconds!")

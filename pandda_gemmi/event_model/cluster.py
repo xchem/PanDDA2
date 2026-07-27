@@ -153,7 +153,6 @@ class ClusterDensityDBSCAN:
         # cutoff = max(np.quantile(z, 0.95), 2.0)
         cutoff = max(np.quantile(z, 0.98), 2.0)
 
-        # print(f"Cutoff is: {cutoff}")
         high_z_all_points_mask = z_unmasked_array[all_point_indexes_mod] > cutoff
 
 
@@ -189,7 +188,6 @@ class ClusterDensityDBSCAN:
             dists.append(dist)
 
         eps = max(dists)*1.5
-        # print(f"Got an eps of: {eps}")
 
         clusters = DBSCAN(
             eps=eps,
@@ -237,11 +235,8 @@ class ClusterDensityDBSCAN:
                 event_pos_array-event.centroid.reshape(1,3),
                 axis=1
             )
-            # print(event_dist_array)
             close_events = events_array[event_dist_array < 6.0]
-            # print(f"Close event: {close_events}")
             event.local_strength = np.sum([close_event.size for close_event in close_events])
-            # print(f"Local strength: {}")
 
 
         return events, {"cutoff": cutoff, "high_z_all_points_mask": high_z_all_points_mask, "eps": eps}
