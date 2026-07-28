@@ -55,6 +55,7 @@ class ProcessModel:
                  characterization_datasets
                  ):
         # Get the statical maps
+        print(f'Getting statistical maps...')
         mean, std, z = PointwiseMAD()(
             homogenized_dataset_dmap_array,
             characterization_set_dmaps_array
@@ -82,6 +83,7 @@ class ProcessModel:
         protein_density_median = np.median(mean[reference_frame.mask.indicies_sparse_inner_atomic])
 
         # unsparsify input maps
+        print(f'Unsparsifying maps...')
         xmap_grid = reference_frame.unmask(SparseDMap(homogenized_dataset_dmap_array))
         raw_xmap_grid = gemmi.FloatGrid(*dataset_dmap_array.shape)
         raw_xmap_grid.set_unit_cell(z_grid.unit_cell)
@@ -90,6 +92,7 @@ class ProcessModel:
         model_grid = reference_frame.unmask(SparseDMap(model_map))
 
         # Get the initial events from clustering the Z map
+        print(f'Getting events...')
         events, cluster_metadata = ClusterDensityDBSCAN()(z, reference_frame)
         cutoff, high_z_all_points_mask, eps = cluster_metadata.values()
         num_initial_events = len(events)
@@ -102,6 +105,7 @@ class ProcessModel:
             return None, mean, z, std, {}
 
         # Filter the events prior to scoring them based on their size
+        print(f'Filtering events pre-score...')
         for filter in [
             FilterSize(reference_frame, min_size=self.minimum_z_cluster_size),
         ]:
@@ -121,6 +125,7 @@ class ProcessModel:
 
         # Score the events with some method such as the CNN
         time_begin_score_events = time.time()
+        print(f'Scoring events...')
         if self.use_ligand_data:
             for lid, ligand_data in ligand_files.items():
                 confs = get_conformers(ligand_data)
@@ -170,6 +175,7 @@ class ProcessModel:
                 event.bdc = get_bdc(event, xmap_grid, mean_grid, protein_density_median)
 
         # Filter the events after scoring based on keeping only the locally highest scoring event
+        print(f'Filtering events post-score...')
         num_events = len(events)
         score_range = (round(min([_event.score for _event in events.values()]), 2),
                        round(max([_event.score for _event in events.values()]), 2))

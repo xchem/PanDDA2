@@ -300,6 +300,7 @@ def process_dataset(
         for model_number
         in models_to_process
     }
+    print(f'Unpacking model processing results...')
 
     model_events = {}
     model_means = {}
@@ -318,7 +319,9 @@ def process_dataset(
     # TODO: Log properly
     # print(f"\t\tProcessed all models in: {round(time_finish_process_models - time_begin_process_models, 2)}")
 
+
     if args.use_ligand_data & args.autobuild:
+        print(f'handeling autobuilds...')
         # Build the events
         time_begin_autobuild = time.time()
 
@@ -349,6 +352,7 @@ def process_dataset(
             z_ref_arrays[model_number] = processor.put(model_zs[model_number])
 
         # Generate conformers of the dataset ligands to score
+        print(f'Generating autobuild conformers...')
         conformers = {}
         conformer_refs = {}
         for ligand_key in dataset.ligand_files:
@@ -373,6 +377,7 @@ def process_dataset(
             os.mkdir(out_dir)
 
         # Perform autobuilds of events
+        print(f'Performing autobuilds')
         builds = processor.process_dict(
             {
                 _model_event_id: Partial(autobuild_conformer).paramaterise(
@@ -411,7 +416,7 @@ def process_dataset(
         #     model_means,
         #     model_zs
         # )
-
+        print(f'Unpacking autobuilds...')
         for build_key, result in builds.items():
             for path, build in result.items():
                 model_number, event_number, ligand_key, conformer_number = build_key
@@ -436,6 +441,7 @@ def process_dataset(
                 #                                 dtag] / f'build_map_{model_number}_{event_number}_{ligand_key}_{conformer_number}_{name}.ccp4'))
 
         # Select between autobuilds and update event for each event
+        print(f'Selecting autobuilds...')
         for model_number, events in model_events.items():
             for event_number, event in events.items():
 
@@ -481,6 +487,7 @@ def process_dataset(
                 )
 
         # Update the event centroid and bdc from the selected build
+        print(f'Updating events')
         for model_number, events in model_events.items():
             for event_number, event in events.items():
                 old_centroid = [round(float(x), 2) for x in event.centroid]
@@ -539,6 +546,7 @@ def process_dataset(
                 update_model_events[model_number][event_number] = event
 
     # Filter models by whether they have events and skip if no models remain
+    print(f'Selecing model...')
     model_events = {model_number: events for model_number, events in update_model_events.items() if
                     len(events) > 0}
     if len(model_events) == 0:
@@ -556,6 +564,7 @@ def process_dataset(
         # This step can be dangerous in that events with high multiplity (for example due to NCS) could be filtered
         top_selected_model_events = filter_selected_events(dtag, selected_events, )
 
+    print(f'Collecting events...')
     for event_id, event in top_selected_model_events.items():
         pandda_events[event_id] = event
 
@@ -568,7 +577,7 @@ def process_dataset(
             )
         }
     # Output event maps and model maps
-
+    print(f'Outputting maps...')
     output_maps(
         dtag,
         fs,
