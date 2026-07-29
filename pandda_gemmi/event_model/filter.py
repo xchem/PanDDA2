@@ -174,11 +174,12 @@ class FilterLocallyHighestBuildScoring:
 class FilterSymmetryPosBuilds:
     def __init__(self, dataset, radius=2.0, ):
         self.dataset = dataset
-        self.radius =radius
+        self.radius = radius
 
     def __call__(self, events):
 
         new_events = {}
+        print(f'\t\t\t len events {len(events)}; ')
         for event_id, event in events.items():
             event_build, dataset = event.build, self.dataset
             cell = dataset.reflections.reflections.cell
