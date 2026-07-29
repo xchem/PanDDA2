@@ -499,6 +499,7 @@ def process_dataset(
                 event.bdc = event.build.bdc
 
         # Seperate updated model events by model number
+        print(f'Defining updated model events...')
         update_model_events = {}
         for model_number, events in model_events.items():
             for event_number, event in events.items():
@@ -507,6 +508,7 @@ def process_dataset(
                 update_model_events[model_number][event_number] = event
 
         # Filter events by builds
+        print(f'Filtering Builds...')
         for model_number in update_model_events:
             for filter in [
                 FilterSymmetryPosBuilds(dataset, 2.0),
