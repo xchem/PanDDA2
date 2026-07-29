@@ -181,11 +181,22 @@ class FilterSymmetryPosBuilds:
         new_events = {}
         print(f'\t\t\t len events {len(events)}; ')
         for event_id, event in events.items():
+            print(f'\t\t\tEventid: {event_id}')
             event_build, dataset = event.build, self.dataset
             cell = dataset.reflections.reflections.cell
             sg = dataset.reflections.reflections.spacegroup
             st = gemmi.read_structure(str(event_build.build_path))
             # ns = gemmi.NeighborSearch(st[0], dataset.reflections.reflections.cell, self.radius + 2.0).populate(include_h=False)
+
+            build_atoms = 0
+            for model in st:
+                for chain in model:
+                    for res in chain:
+                        for atom_2 in res:
+                            build_atoms += 1
+            print(f'\t\t\t\tbuild atoms: {build_atoms}')
+            print(f'\t\t\t\tNum symops: {len([x for x in sg.operations()])}')
+
 
             symettry_poss = []
             for model in st:
@@ -211,6 +222,7 @@ class FilterSymmetryPosBuilds:
                                     )
                                     new_pos_orth = cell.orthogonalize(new_frac_pos)
                                     symettry_poss.append(new_pos_orth)
+            print(f'\t\t\t\tSymposses: {len(symettry_poss)}')
 
             dists = []
             for model in st:
