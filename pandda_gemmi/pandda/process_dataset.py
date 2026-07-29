@@ -514,6 +514,7 @@ def process_dataset(
                 FilterSymmetryPosBuilds(dataset, 2.0),
                 FilterLocallyHighestBuildScoring(10.0)
             ]:
+                print(f'\t\t{filter}')
                 j_0 = len(update_model_events[model_number])
                 update_model_events[model_number] = filter(update_model_events[model_number])
                 # TODO: Log properly
