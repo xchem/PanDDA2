@@ -348,7 +348,9 @@ LIGAND_IGNORE_REGEXES = [
     "None "
     "native"
     "tmp",
-    "tmp"
+    ".*pandda-model",
+    '.*ensemble-model',
+    ".*pandda-input"
 ]
 
 ###################################################################
