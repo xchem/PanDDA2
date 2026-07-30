@@ -353,6 +353,8 @@ def process_dataset(
 
         # Generate conformers of the dataset ligands to score
         print(f'Generating autobuild conformers...')
+        for ligand_key in dataset.ligand_files:
+            print(f'\tLigand Keys: {ligand_key}')
         conformers = {}
         conformer_refs = {}
         for ligand_key in dataset.ligand_files:
@@ -470,11 +472,6 @@ def process_dataset(
                     selected_build_key[1],
                     selected_build_key[0],
                     selected_build['score'],
-                    # event_builds[selected_build_key]['signal'] / event_builds[selected_build_key]['noise'],
-                    # builds[(model_number, event_number, selected_build_key[0], selected_build_key[2])][
-                    #     selected_build_key[1]]['centroid'],
-                    # builds[(model_number, event_number, selected_build_key[0], selected_build_key[2])][
-                    #     selected_build_key[1]]['new_bdc'],
                     selected_build['centroid'],
                     selected_build['new_bdc'],
                     build_score=selected_build['score'],

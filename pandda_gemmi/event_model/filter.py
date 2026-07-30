@@ -185,6 +185,7 @@ class FilterSymmetryPosBuilds:
             event_build, dataset = event.build, self.dataset
             cell = dataset.reflections.reflections.cell
             sg = dataset.reflections.reflections.spacegroup
+            print(f'\t\t\t\Build path: {event_build.build_path}')
             st = gemmi.read_structure(str(event_build.build_path))
             # ns = gemmi.NeighborSearch(st[0], dataset.reflections.reflections.cell, self.radius + 2.0).populate(include_h=False)
 
