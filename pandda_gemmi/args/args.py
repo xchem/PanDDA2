@@ -13,6 +13,7 @@ class PanDDAKWArgs:
     mtz_regex: str = constants.ARGS_MTZ_REGEX_DEFAULT
     use_ligand_data: bool = True
     ligand_dir_regex: str = "compound"
+    site_override_file: Optional[str] = None
     ligand_cif_regex: str = constants.ARGS_LIGAND_CIF_REGEX_DEFAULT
     ligand_pdb_regex: str = constants.ARGS_LIGAND_PDB_REGEX_DEFAULT
     ligand_smiles_regex: str = constants.ARGS_LIGAND_SMILES_REGEX_DEFAULT
@@ -151,6 +152,10 @@ class PanDDAKWArgs:
             type=str,
             default=constants.ARGS_LIGAND_DIR_REGEX_DEFAULT,
             help=constants.ARGS_LIGAND_DIR_REGEX_HELP,
+        )
+        parser.add_argument(
+            '--site_override_file',
+            default=None,
         )
 
         # Processing
@@ -731,6 +736,7 @@ class PanDDAArgs(PanDDAKWArgs, PanDDAPArgs):
             mtz_regex=args.mtz_regex,
             use_ligand_data=args.use_ligand_data,
             ligand_dir_regex=args.ligand_dir_regex,
+            site_override_file=args.site_override_file,
             ligand_cif_regex=args.ligand_cif_regex,
             ligand_pdb_regex=args.ligand_pdb_regex,
             ligand_smiles_regex=args.ligand_smiles_regex,
@@ -861,6 +867,7 @@ class PanDDAProcessDatasetArgs(PanDDAKWArgs, PanDDAProcessDatasetPArgs):
             mtz_regex=args.mtz_regex,
             use_ligand_data=args.use_ligand_data,
             ligand_dir_regex=args.ligand_dir_regex,
+            site_override_file=args.site_override_file,
             ligand_cif_regex=args.ligand_cif_regex,
             ligand_pdb_regex=args.ligand_pdb_regex,
             ligand_smiles_regex=args.ligand_smiles_regex,
@@ -977,6 +984,7 @@ class PanDDATitrationSeriesArgs(PanDDAKWArgs, PanDDATitrationPArgs):
             mtz_regex=args.mtz_regex,
             use_ligand_data=args.use_ligand_data,
             ligand_dir_regex=args.ligand_dir_regex,
+            site_override_file=args.site_override_file,
             ligand_cif_regex=args.ligand_cif_regex,
             ligand_pdb_regex=args.ligand_pdb_regex,
             ligand_smiles_regex=args.ligand_smiles_regex,

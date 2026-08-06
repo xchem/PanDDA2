@@ -7,7 +7,7 @@ from rich.traceback import install
 install(show_locals=True)
 import scipy
 import matplotlib.pyplot as plt
-
+from sklearn.cluster import DBSCAN
 
 
 from ..interfaces import *
@@ -550,6 +550,7 @@ class HeirarchicalSiteModelAlignedSequences:
                  ref_dataset,
                  existing_events,
                  existing_sites,
+                 site_overrides
                  ):
 
         # Handle edge cases
@@ -612,7 +613,6 @@ class HeirarchicalSiteModelAlignedSequences:
             ).fit(scipy.spatial.distance.squareform(distance_matrix))
         clusters = db.labels_
 
-
         # Get the event sites
         event_clusters = {}
         j = 0
@@ -635,6 +635,39 @@ class HeirarchicalSiteModelAlignedSequences:
         # If there are existing sites, first construct these clusters, including any new datasets
         # that cluster with old ones. Keep any known events in their sites regardless of new clustering.
         allocated_events = []
+
+        # If there are site overides allocate datasets to those first
+        if site_overrides:
+            for site_overrid_key, site_override in site_overrides.items():
+                dists = {}
+                for event_id, event_env in event_environments.items():
+                    if event_id in allocated_events:
+                        continue
+                    # Get the distance to the site
+                    dist = self.get_event_distance(
+                        [(x[0], x[1]) for x in site_override['residues']], 
+                        event_env, 
+                        msa, 
+                        site_override['dtag'], 
+                        event_id[0],
+                        )
+                    dists[event_id] = dist
+
+                # Get close enough events
+                close_events = [event_id for event_id in dists if dists[event_id] < 0.35]
+
+                if len(close_events) == 0:
+                    continue
+
+                # If close enough
+                sites[site_idx] = Site(
+                    close_events,
+                    np.array([0.0,0.0,0.0]),
+                    site_overrid_key,
+                    ""
+                )
+
+        # 
         if existing_sites:
             print(f'Allocating sites from existing sites')
             allocated_events = [

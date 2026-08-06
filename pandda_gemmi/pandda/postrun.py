@@ -1,4 +1,5 @@
 import time
+import yaml
 
 import pandas as pd
 
@@ -37,7 +38,13 @@ def postrun(
     # Get existing site and event data (if it exists)
     inspect_table_file = fs.output.analyses_dir / constants.PANDDA_INSPECT_EVENTS_PATH
     inspect_sites_file = fs.output.analyses_dir / constants.PANDDA_INSPECT_SITES_PATH
-    if inspect_table_file.exists():
+
+    if args.site_override_file:
+        with open(args.site_override_file, 'r') as f:
+            site_overrides = yaml.safe_load(f)
+        existing_events = None
+        existing_sites = None
+    elif inspect_table_file.exists():
         inspect_events_table = pd.read_csv(inspect_table_file)
         inspect_sites_table = pd.read_csv(inspect_sites_file)
         print(f'Found existing sites')
@@ -48,10 +55,12 @@ def postrun(
             for _idx, _row
             in inspect_sites_table.iterrows()
         }
+        site_overrides = None
     else:
         print(f'Found no existing PanDDA Results at {inspect_table_file}')
         existing_events = None
         existing_sites = None
+        site_overrides = None
 
     # Autobuild the best scoring event for each dataset
     console.start_autobuilding()
@@ -85,7 +94,8 @@ def postrun(
         ],
         HeirarchicalSiteModelAlignedSequences(t=args.max_site_distance_cutoff, debug=args.debug),
         existing_events,
-        existing_sites
+        existing_sites,
+        site_overrides
     )
     # TODO: Log properly sites
 
