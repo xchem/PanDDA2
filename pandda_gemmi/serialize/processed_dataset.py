@@ -62,11 +62,11 @@ def processed_dataset(
             'Number of Score Filtered Events':meta['Number of Score Filtered Events'],
             "Events": {
                 event_idx: {
-                    "Score": model_events[event_idx].score,
+                    "Score": round(float(model_events[event_idx].score), 2),
                     "BDC": model_events[event_idx].bdc,
                     "Size": model_events[event_idx].size,
                     "Centroid": [float(x) for x in np.mean(model_events[event_idx].pos_array, axis=0).flatten()],
-                    "score": model_events[event_idx].build.score,
+                    "score": round(float(model_events[event_idx].build.score), 2),
                     "Local Strength": float(model_events[event_idx].local_strength),
                     "Build Score": model_events[event_idx].build.build_score,
                     "Noise": model_events[event_idx].build.noise,

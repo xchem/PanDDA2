@@ -590,25 +590,43 @@ class HeirarchicalSiteModelAlignedSequences:
         )
 
         # Cluster the centroids
-        linkage = scipy.cluster.hierarchy.linkage(
-            scipy.spatial.distance.squareform(distance_matrix),
-            # method='complete',
-            method='single',
-            optimal_ordering=True
-            # metric='chebyshev'
-        )
-        clusters = scipy.cluster.hierarchy.fcluster(
-            linkage,
-            t=self.t,
-            criterion="distance",
-        )
+        # linkage = scipy.cluster.hierarchy.linkage(
+        #     scipy.spatial.distance.squareform(distance_matrix),
+        #     # method='complete',
+        #     method='single',
+        #     optimal_ordering=True
+        #     # metric='chebyshev'
+        # )
+        # clusters = scipy.cluster.hierarchy.fcluster(
+        #     linkage,
+        #     t=self.t,
+        #     criterion="distance",
+        # )
+
+        # EPS 0.35 - at least 3 residues shared to be adjacent
+        # Min samples to be core point 3
+        db = DBSCAN(
+            eps=0.35, 
+            min_samples=3, 
+            distance='precomputed',
+            ).fit(scipy.spatial.distance.squareform(distance_matrix))
+        clusters = db.labels_
+
 
         # Get the event sites
         event_clusters = {}
-        for j, cluster in enumerate(np.unique(clusters)):
+        j = 0
+        for cluster in enumerate(np.unique(clusters)):
             cluster_event_id_array = event_id_array[clusters == cluster]
-            for event_id in cluster_event_id_array:
-                event_clusters[(str(event_id[0]), int(event_id[1]))] = j
+            # Each outlier must have its own site
+            if cluster == -1:
+                for event_id in cluster_event_id_array:
+                    event_clusters[(str(event_id[0]), int(event_id[1]))] = j
+                    j = j+1
+            else:
+                for event_id in cluster_event_id_array:
+                    event_clusters[(str(event_id[0]), int(event_id[1]))] = j
+                j = j+1
         rprint('event clusters')
         rprint(event_clusters)
 
