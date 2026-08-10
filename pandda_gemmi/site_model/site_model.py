@@ -610,7 +610,7 @@ class HeirarchicalSiteModelAlignedSequences:
             eps=0.35, 
             min_samples=3, 
             metric='precomputed',
-            ).fit(scipy.spatial.distance.squareform(distance_matrix))
+            ).fit(distance_matrix)
         clusters = db.labels_
 
         # Get the event sites
