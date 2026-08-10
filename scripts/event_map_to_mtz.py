@@ -30,6 +30,7 @@ def event_map_to_mtz(event_map_path, reference_structure_path, output_mtz_path):
 def event_maps_to_mtz(pandda_path, model_building_path):
     print(f'Making mtzs of event maps from {pandda_path} in {model_building_path}')
     pandda_path = pathlib.Path(pandda_path)
+    model_building_path = pathlib.Path(model_building_path)
     for dataset_dir in (pandda_path / 'processed_datasets').glob('*'):
         print(f'Processing {dataset_dir}')
         if not dataset_dir.is_dir():
