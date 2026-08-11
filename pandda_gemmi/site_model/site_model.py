@@ -616,7 +616,7 @@ class HeirarchicalSiteModelAlignedSequences:
         # Get the event sites
         event_clusters = {}
         j = 0
-        for cluster in enumerate(np.unique(clusters)):
+        for cluster in np.unique(clusters):
             cluster_event_id_array = event_id_array[clusters == cluster]
             # Each outlier must have its own site
             if cluster == -1:
