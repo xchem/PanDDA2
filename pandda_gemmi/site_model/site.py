@@ -4,3 +4,5 @@ class Site:
         self.centroid = centroid
         self.name = name
         self.comment = comment
+    def __repr__(self):
+        return f"Site: {[_event_id for _event_id in self.event_ids]}"

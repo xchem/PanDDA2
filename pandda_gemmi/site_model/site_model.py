@@ -544,7 +544,7 @@ class HeirarchicalSiteModelAlignedSequences:
         return correlations
         ...
 
-    def __call__(self,
+    def DEP__call__(self,
                  datasets: Dict[str, DatasetInterface],
                  events: Dict[Tuple[str, int], EventInterface],
                  ref_dataset,
@@ -572,6 +572,7 @@ class HeirarchicalSiteModelAlignedSequences:
         # Get overlaps
         distances = self.get_event_distances(event_environments, msa)
 
+        # Do an initial clustering on high scoring events
         # Find the site centroids against the reference
         distance_matrix = np.array(
             [
@@ -579,15 +580,17 @@ class HeirarchicalSiteModelAlignedSequences:
                     distance
                     for event_id_2, distance
                     in event_distances.items()
+                    if events[event_id_2].score > 0.9
                 ]
                 for event_id_1, event_distances
                 in distances.items()
+                if events[event_id_1].score > 0.9
 
             ]
         )
 
         event_id_array = np.array(
-            [_event_id for _event_id in distances.keys()]
+            [_event_id for _event_id in distances.keys() if events[_event_id].score > 0.9]
         )
 
         # Cluster the centroids
@@ -615,7 +618,7 @@ class HeirarchicalSiteModelAlignedSequences:
 
         # Get the event sites
         event_clusters = {}
-        j = 0
+        j = 1
         for cluster in np.unique(clusters):
             cluster_event_id_array = event_id_array[clusters == cluster]
             # Each outlier must have its own site
@@ -742,6 +745,232 @@ class HeirarchicalSiteModelAlignedSequences:
                     np.array([0.0,0.0,0.0])
                 )
 
+        # plt.figure()
+        # dn = scipy.cluster.hierarchy.dendrogram(linkage)
+        # plt.savefig('dendrogram.png')
+
+        return sites
+
+    def get_event_distances_to_site(self, msa, event_environments, allocated_events, residues, dtag):
+        dists = {}
+        for event_id, event_env in event_environments.items():
+            if event_id in allocated_events:
+                continue
+            # Get the distance to the site
+            dist = self.get_event_distance(
+                [(x[0], x[1]) for x in residues], 
+                event_env, 
+                msa, 
+                dtag, 
+                event_id[0],
+                )
+            dists[event_id] = dist
+
+        return dists
+
+    def __call__(self,
+                 datasets: Dict[str, DatasetInterface],
+                 events: Dict[Tuple[str, int], EventInterface],
+                 ref_dataset,
+                 existing_events,
+                 existing_sites,
+                 site_overrides
+                 ):
+
+        # Handle edge cases
+        if len(events) == 0:
+            return {}
+
+        if len(events) == 1:
+            return {0: Site(
+                list(events.keys()),
+                np.mean(list(events.values())[0].pos_array, axis=0)
+            )}
+        
+        # Get the sequence alignments
+        msa = self.get_alignments(datasets)
+
+        # Find the residue environment of each event (chain and residue number)
+        event_environments: Dict[Tuple[str, int], List[Tuple[str, str]]] = self.get_event_environments(datasets, events, distance=self.distance)
+
+        # Get overlaps
+        distances = self.get_event_distances(event_environments, msa)
+
+        # Do an initial clustering on high scoring events
+        # Find the site centroids against the reference
+        high_score_distance_matrix = np.array(
+            [
+                [
+                    distance
+                    for event_id_2, distance
+                    in event_distances.items()
+                    if events[event_id_2].score > 0.9
+                ]
+                for event_id_1, event_distances
+                in distances.items()
+                if events[event_id_1].score > 0.9
+
+            ]
+        )
+
+        high_score_event_id_array = np.array(
+            [_event_id for _event_id in distances.keys() if events[_event_id].score > 0.9]
+        )
+
+        # EPS 0.35 - at least 3 residues shared to be adjacent
+        # Min samples to be core point 3
+        high_score_db = DBSCAN(
+            eps=0.35, 
+            min_samples=3, 
+            metric='precomputed',
+            ).fit(high_score_distance_matrix)
+        high_score_clusters = high_score_db.labels_
+
+        # Get the event sites
+        high_score_event_clusters = {}
+        j = 1
+        for cluster in np.unique(high_score_clusters):
+            cluster_event_id_array = high_score_event_id_array[high_score_clusters == cluster]
+            # Each outlier must have its own site
+            if cluster == -1:
+                for event_id in cluster_event_id_array:
+                    high_score_event_clusters[(str(event_id[0]), int(event_id[1]))] = j
+                    j = j+1
+            else:
+                for event_id in cluster_event_id_array:
+                    high_score_event_clusters[(str(event_id[0]), int(event_id[1]))] = j
+                j = j+1
+        rprint('high score event clusters')
+        rprint(high_score_event_clusters)
+
+        sites = {}
+
+        # If there are existing sites, first construct these clusters, including any new datasets
+        # that cluster with old ones. Keep any known events in their sites regardless of new clustering.
+        allocated_events = []
+
+        # Handle allocating events to existing sites
+        if existing_sites:
+            print(f'Allocating sites from existing sites')
+            allocated_events = [
+                (_row['dtag'], int(_row['event_idx']))
+                 for _row
+                 in existing_events.values()
+            ]
+            for site_idx, site_info in existing_sites.items():
+                # Get known events in this site
+                known_site_events = [
+                    (_row['dtag'], int(_row['event_idx']))
+                     for _row
+                     in existing_events.values()
+                     if _row['site_idx'] == site_idx
+                ]
+
+                # Get any new datasets that cluster with these (and aren't in a known site)
+                distances_to_site_events = {
+                    _event_id: min(
+                        [
+                            distances[_event_id][_site_event_id] 
+                            for _site_event_id 
+                            in known_site_events
+                        ]
+                    ) 
+                    for _event_id 
+                    in events
+                    if (_event_id not in allocated_events) & (_event_id not in existing_events)
+                    }
+                
+                new_overlapping_events = [
+                    new_event_id
+                    for new_event_id, dist
+                    in distances_to_site_events.items()
+                    if dist < 1
+                ]
+                rprint(f'site idx: {site_idx} overlapping events: {new_overlapping_events}')
+
+                sites[site_idx] = Site(
+                    known_site_events + new_overlapping_events,
+                    site_info['centroid'],
+                    site_info['Name'],
+                    site_info['Comment']
+                )
+                # Allocate new events that have been used
+                allocated_events += new_overlapping_events
+
+
+        # If there are site overides allocate datasets to those first
+        if site_overrides:
+            for site_overrid_key, site_override in site_overrides.items():
+                dists = self.get_event_distances_to_site(
+                    msa, 
+                    event_environments, 
+                    allocated_events, 
+                    site_override['residues'], 
+                    site_override['dtag']
+                )
+
+                # Get close enough events
+                close_events = [event_id for event_id in dists if dists[event_id] < 0.35]
+
+                if len(close_events) == 0:
+                    continue
+
+                # If close enough
+                sites[len(sites)+1] = Site(
+                    close_events,
+                    np.array([0.0,0.0,0.0]),
+                    site_overrid_key,
+                    ""
+                )
+                allocated_events += close_events
+
+        # Allocate events in the high scoring clustering
+        
+        for cluster_id in np.unique([x for x in high_score_clusters.values()]):
+            high_scoring_cluster_events = [_event_id for _event_id in high_score_clusters if (high_score_clusters[_event_id] == cluster_id) & (_event_id not in allocated_events) & (_event_id not in existing_events)]
+
+            # Get events with non-zero distances to these high scoring clusters
+            distances_to_site_events = {
+                                _event_id: min(
+                                    [
+                                        distances[_event_id][_site_event_id] 
+                                        for _site_event_id 
+                                        in known_site_events
+                                    ]
+                                ) 
+                                for _event_id 
+                                in events
+                                if (_event_id not in allocated_events) & (_event_id not in existing_events)
+                                }
+            low_scoring_cluster_events = [_event_id for _event_id in distances_to_site_events if distances_to_site_events[_event_id] < 1]
+            cluster_event_ids = high_scoring_cluster_events + low_scoring_cluster_events
+            sites[len(sites)+1] = Site(
+                                cluster_event_ids,
+                                np.array([0.0,0.0,0.0]),
+                            )
+            allocated_events += cluster_event_ids
+
+        print('Initial sites')
+        print(sites)
+        print('Events allocated to initial sites')
+        print(allocated_events)
+
+        # Allocate other events to the site of their closest neighbour unless all are equally distant
+        outlying_events = [event_id for event_id in events if event_id not in allocated_events]
+        print(f'Got outlying events: {outlying_events}')
+        for event_id in outlying_events:
+
+            # Get new, unallocated events
+            new_site_events = [event_id,]
+
+            if len(new_site_events) != 0:
+
+                sites[len(sites)+1] = Site(
+                    new_site_events,
+                    np.array([0.0,0.0,0.0])
+                )
+
+        print(f'Got outlying events given their own clusters: {outlying_events}')
         # plt.figure()
         # dn = scipy.cluster.hierarchy.dendrogram(linkage)
         # plt.savefig('dendrogram.png')
