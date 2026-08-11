@@ -927,7 +927,7 @@ class HeirarchicalSiteModelAlignedSequences:
 
         # Allocate events in the high scoring clustering
         
-        for cluster_id in np.unique([x for x in high_score_clusters.values()]):
+        for cluster_id in np.unique([x for x in high_score_event_clusters.values()]):
             high_scoring_cluster_events = [_event_id for _event_id in high_score_clusters if (high_score_clusters[_event_id] == cluster_id) & (_event_id not in allocated_events) & (_event_id not in existing_events)]
 
             # Get events with non-zero distances to these high scoring clusters
