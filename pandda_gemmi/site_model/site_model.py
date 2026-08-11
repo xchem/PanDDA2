@@ -774,7 +774,8 @@ class HeirarchicalSiteModelAlignedSequences:
                  ref_dataset,
                  existing_events,
                  existing_sites,
-                 site_overrides
+                 site_overrides,
+                 event_cutoff=0.85
                  ):
 
         # Handle edge cases
@@ -804,18 +805,18 @@ class HeirarchicalSiteModelAlignedSequences:
                     distance
                     for event_id_2, distance
                     in event_distances.items()
-                    if events[event_id_2].score > 0.9
+                    if events[event_id_2].score > event_cutoff
                 ]
                 for event_id_1, event_distances
                 in distances.items()
-                if events[event_id_1].score > 0.9
-
+                if events[event_id_1].score > event_cutoff
             ]
         )
 
         high_score_event_id_array = np.array(
-            [_event_id for _event_id in distances.keys() if events[_event_id].score > 0.9]
+            [_event_id for _event_id in distances.keys() if events[_event_id].score > event_cutoff]
         )
+        print(f'High scoring event id array: {high_score_event_id_array}')
 
         # EPS 0.35 - at least 3 residues shared to be adjacent
         # Min samples to be core point 3

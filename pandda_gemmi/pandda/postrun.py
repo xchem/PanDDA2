@@ -82,6 +82,8 @@ def postrun(
         #
         console.processed_autobuilds(autobuilds)
 
+    print(f'Event scores: {[event.score for event_id, event in pandda_events.items()]}')
+
     # Get the sites
     sites: Dict[int, Site] = get_sites(
         datasets,
