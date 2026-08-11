@@ -16,7 +16,7 @@ dependencies = [
     "joblib",
     "scikit-learn",
     "umap-learn",
-    "hdbscan",
+    # "hdbscan",
     "matplotlib",
     "rich",
     "seaborn",
