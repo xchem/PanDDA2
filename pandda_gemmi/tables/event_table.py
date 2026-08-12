@@ -54,7 +54,7 @@ class EventTableRecord:
             z=centroid[2],
             # z_mean=0.0,
             z_mean=float(event.score),
-            z_peak=float(event.build.score),
+            z_peak=float(event.score),
             hit_in_site_probability=hit_in_site_probability,
             applied_b_factor_scaling=0.0,
             high_resolution=round(dataset.reflections.resolution(), 2),
