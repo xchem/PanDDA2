@@ -792,7 +792,11 @@ class HeirarchicalSiteModelAlignedSequences:
         msa = self.get_alignments(datasets)
 
         # Find the residue environment of each event (chain and residue number)
-        event_environments: Dict[Tuple[str, int], List[Tuple[str, str]]] = self.get_event_environments(datasets, events, distance=self.distance)
+        event_environments: Dict[Tuple[str, int], List[Tuple[str, str]]] = self.get_event_environments(
+            datasets, 
+            events, 
+            distance=self.distance,
+            )
 
         # Get overlaps
         distances = self.get_event_distances(event_environments, msa)
@@ -868,18 +872,18 @@ class HeirarchicalSiteModelAlignedSequences:
                 ]
 
                 # Get any new datasets that cluster with these (and aren't in a known site)
-                distances_to_site_events = {
-                    _event_id: min(
-                        [
+                distances_to_site_events = {}
+                for _event_id in events:
+                    if (_event_id not in allocated_events) & (_event_id not in existing_events) :
+                        site_distances = [
                             distances[_event_id][_site_event_id] 
                             for _site_event_id 
                             in known_site_events
                         ]
-                    ) 
-                    for _event_id 
-                    in events
-                    if (_event_id not in allocated_events) & (_event_id not in existing_events)
-                    }
+                        if len(site_distances) == 0:
+                            distances_to_site_events[_event_id] = 1.0
+                        else:
+                            distances_to_site_events[_event_id] = min(site_distances)
                 
                 new_overlapping_events = [
                     new_event_id
