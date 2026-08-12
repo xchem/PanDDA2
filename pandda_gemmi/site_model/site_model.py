@@ -939,7 +939,7 @@ class HeirarchicalSiteModelAlignedSequences:
                 ]
 
 
-            # Get events with non-zero distances to these high scoring clusters
+            # Get events with non-1 distances to the high scoring cluster
             distances_to_site_events = {
                 _event_id: min(
                     [
@@ -950,7 +950,9 @@ class HeirarchicalSiteModelAlignedSequences:
                 ) 
                 for _event_id 
                 in events
-                if (_event_id not in allocated_events) & (_event_id not in existing_events) & (_event_id not in high_scoring_cluster_events)
+                if (_event_id not in allocated_events) 
+                & (_event_id not in existing_events) 
+                & (_event_id not in high_scoring_cluster_events)
             }
             low_scoring_cluster_events = [_event_id for _event_id in distances_to_site_events if distances_to_site_events[_event_id] < 1]
             cluster_event_ids = high_scoring_cluster_events + low_scoring_cluster_events

@@ -39,8 +39,9 @@ class RankHighEventScoreBySite:
         for j, site in enumerate(
             sorted(
                 sites.values(), 
-                key=lambda _site: max([get_event_score(events[_event_id]) for _event_id in _site.event_ids])),
+                key=lambda _site: max([get_event_score(events[_event_id]) for _event_id in _site.event_ids]),
                 reverse=True
+            ),
         ):
             sorted_sites[j+1] = site
 
