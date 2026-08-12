@@ -800,6 +800,10 @@ class HeirarchicalSiteModelAlignedSequences:
 
         # Get overlaps
         distances = self.get_event_distances(event_environments, msa)
+        for _event_id, event_distances in distances.items():
+            print(_event_id)
+            for _event_2_id, dist in event_distances.items():
+                print(f'\t{_event_2_id}: {dist}')
 
         # Do an initial clustering on high scoring events
         # Find the site centroids against the reference
