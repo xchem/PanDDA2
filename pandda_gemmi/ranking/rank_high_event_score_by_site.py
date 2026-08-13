@@ -37,6 +37,7 @@ class RankHighEventScoreBySite:
         # Renumber sites by the highest event id in them
         sorted_sites = {}
         for j, site in enumerate(
+            
             sorted(
                 sites.values(), 
                 key=lambda _site: max([get_event_score(events[_event_id]) for _event_id in _site.event_ids]),

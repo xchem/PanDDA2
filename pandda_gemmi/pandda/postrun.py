@@ -19,8 +19,8 @@ from pandda_gemmi.tables import output_tables
 from pandda_gemmi import serialize
 from pandda_gemmi.event_model.event import Event
 
-
 from pandda_gemmi.metrics import get_hit_in_site_probabilities
+
 
 def postrun(
         args,

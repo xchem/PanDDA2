@@ -897,6 +897,9 @@ class HeirarchicalSiteModelAlignedSequences:
                 ]
                 rprint(f'site idx: {site_idx} overlapping events: {new_overlapping_events}')
 
+                if len(known_site_events + new_overlapping_events) == 0:
+                    continue
+
                 sites[site_idx] = Site(
                     known_site_events + new_overlapping_events,
                     site_info['centroid'],
@@ -966,6 +969,8 @@ class HeirarchicalSiteModelAlignedSequences:
             
             low_scoring_cluster_events = [_event_id for _event_id in distances_to_site_events if distances_to_site_events[_event_id] < 1]
             cluster_event_ids = high_scoring_cluster_events + low_scoring_cluster_events
+            if len(cluster_event_ids) == 0:
+                continue
             sites[len(sites)+1] = Site(
                                 cluster_event_ids,
                                 np.array([0.0,0.0,0.0]),
