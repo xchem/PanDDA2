@@ -12,7 +12,6 @@ def serialize_events(
         path
 ):
     dic = {
-
         event_idx: {
             "Score": float(selected_model_events[event_idx].score),
             "BDC": float(selected_model_events[event_idx].bdc),

@@ -91,6 +91,7 @@ def process_dataset(
         new_events, new_autobuilds = read_dataset(fs, dtag)
         pandda_events.update(new_events)
         autobuilds.update(new_autobuilds)
+        return pandda_events, autobuilds
 
     # Get the dataset
     dataset = datasets[dtag]
