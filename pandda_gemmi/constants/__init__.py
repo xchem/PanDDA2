@@ -350,7 +350,9 @@ LIGAND_IGNORE_REGEXES = [
     "tmp",
     ".*pandda-model",
     '.*ensemble-model',
-    ".*pandda-input"
+    ".*pandda-input",
+    'original-dimple',
+    'reduce_fail'
 ]
 
 ###################################################################

@@ -991,10 +991,9 @@ class HeirarchicalSiteModelAlignedSequences:
             new_site_events = [event_id,]
 
             if len(new_site_events) != 0:
-
                 sites[len(sites)+1] = Site(
                     new_site_events,
-                    np.array([0.0,0.0,0.0])
+                    np.array([0.0,0.0,0.0]),
                 )
 
         print(f'Got outlying events given their own clusters: {outlying_events}')

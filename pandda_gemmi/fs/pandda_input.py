@@ -166,7 +166,8 @@ def get_input_ligands(path: Path, ligand_dir_regex, ligand_cif_regex, ligand_smi
             ligand_pdb_regex,
             check_input,
     ).items():
-        path_ligands[ligand_key] = ligand_files
+        if ligand_files.ligand_cif:
+            path_ligands[ligand_key] = ligand_files
 
     # Then look inside any subdirectory matching ligand_dir_regex (e.g.
     # "compound"). Subdirectory ligands take precedence when more complete.
