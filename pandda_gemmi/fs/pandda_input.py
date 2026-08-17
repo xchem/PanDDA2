@@ -194,7 +194,8 @@ def get_input_ligands(path: Path, ligand_dir_regex, ligand_cif_regex, ligand_smi
 
                 # Or entirely new
                 else:
-                    path_ligands[ligand_key] = ligand_files
+                    if ligand_files.ligand_cif:
+                        path_ligands[ligand_key] = ligand_files
 
     return path_ligands
 
