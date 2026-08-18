@@ -352,7 +352,9 @@ LIGAND_IGNORE_REGEXES = [
     '.*ensemble-model',
     ".*pandda-input",
     'original-dimple',
-    'reduce_fail'
+    'reduce_fail',
+    'coot-tmp-restraints',
+    'fitted.*'
 ]
 
 ###################################################################

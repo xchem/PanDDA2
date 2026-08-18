@@ -151,7 +151,14 @@ def parse_dir_ligands(path: Path, ligand_cif_regex, ligand_smiles_regex, ligand_
     return ligand_keys
 
 
-def get_input_ligands(path: Path, ligand_dir_regex, ligand_cif_regex, ligand_smiles_regex, ligand_pdb_regex, check_input):
+def get_input_ligands(
+        path: Path, 
+        ligand_dir_regex, 
+        ligand_cif_regex, 
+        ligand_smiles_regex, 
+        ligand_pdb_regex, 
+        check_input,
+        ):
     path_ligands = {}
 
     # First, look for ligand files directly in the dataset directory (a "flat"
