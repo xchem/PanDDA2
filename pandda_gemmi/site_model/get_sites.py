@@ -7,7 +7,8 @@ ref_dataset,
         site_model,
         existing_events,
         existing_sites,
-        site_overrides
+        site_overrides,
+        existing_alignments
 ):
     sites = site_model(
         datasets,
@@ -15,7 +16,8 @@ ref_dataset,
         ref_dataset,
         existing_events,
         existing_sites,
-        site_overrides
+        site_overrides,
+        existing_alignments
         # processor,
         # structure_array_refs,
     )

@@ -12,6 +12,7 @@ class RankHighEventScoreBySite:
             events: Dict[Tuple[str, int], EventInterface],
             sites: Dict[int, SiteInterface],
             autobuilds: Dict[Tuple[str, int], Dict[str, AutobuildInterface]],
+            existing_sites,
     ):
         # # Sort sites ids by best score
         # site_scores = {}
@@ -34,17 +35,20 @@ class RankHighEventScoreBySite:
         #         ]
         #     )
 
-        # Renumber sites by the highest event id in them
-        sorted_sites = {}
-        for j, site in enumerate(
+        # Renumber sites by the highest event id in them IF FIRST RUN!
+        if not existing_sites:
+            sorted_sites = {}
+            for j, site in enumerate(
 
-            sorted(
-                sites.values(), 
-                key=lambda _site: max([get_event_score(events[_event_id]) for _event_id in _site.event_ids]),  # Max is safe: no event should have zero events 
-                reverse=True
-            ),
-        ):
-            sorted_sites[j+1] = site
+                sorted(
+                    sites.values(), 
+                    key=lambda _site: max([get_event_score(events[_event_id]) for _event_id in _site.event_ids]),  # Max is safe: no event should have zero events 
+                    reverse=True
+                ),
+            ):
+                sorted_sites[j+1] = site
+        else:
+            sorted_sites = sites
 
         # Sort event ids within each site by best score
         sorted_event_ids = []

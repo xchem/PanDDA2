@@ -13,6 +13,8 @@ def check_pdb_file(path):
         for model in st:
             for chain in model:
                 for residue in chain:
+                    if residue.name in constants.RESIDUE_NAMES:
+                        return False
                     for atom in residue:
                         num_atoms += 1
 
@@ -55,7 +57,7 @@ def check_smiles_file(path):
         return False
 
 
-def get_input_pdb_file(path, pdb_regex, check_input):
+def get_input_pdb_file(path, pdb_regex, check_input=True):
     input_pdb_files = [pdb_path for pdb_path in path.glob(pdb_regex)]
     if len(input_pdb_files) == 0:
         input_pdb_file = None
@@ -69,7 +71,7 @@ def get_input_pdb_file(path, pdb_regex, check_input):
     return input_pdb_file
 
 
-def get_input_mtz_file(path, mtz_regex, check_input):
+def get_input_mtz_file(path, mtz_regex, check_input=True):
     input_mtz_files = [mtz_path for mtz_path in path.glob(mtz_regex)]
     if len(input_mtz_files) == 0:
         input_mtz_file = None
@@ -132,6 +134,7 @@ def parse_dir_ligands(path: Path, ligand_cif_regex, ligand_smiles_regex, ligand_
                     ligand_keys[stem] = LigandFiles(None, file_path, None)
             else:
                 print(f'Ligand name: {name} fails smiles check!')
+
         elif re.match(ligand_pdb_regex, name):
             checked = True
             if check_input:
@@ -157,7 +160,7 @@ def get_input_ligands(
         ligand_cif_regex, 
         ligand_smiles_regex, 
         ligand_pdb_regex, 
-        check_input,
+        check_input=True,
         ):
     path_ligands = {}
 
@@ -221,18 +224,12 @@ class DatasetDir:
     ):
         # Get the dtag
         self.dtag = path.name
-
-        # Decide whether to do checks based on whether dataset has been accepted
-        check_input=True
-        if output_dir:
-            if (output_dir / constants.PANDDA_PROCESSED_DATASETS_DIR / self.dtag).exists():
-                check_input = False
         
         # Get pdb
-        self.input_pdb_file = get_input_pdb_file(path, pdb_regex,check_input)
+        self.input_pdb_file = get_input_pdb_file(path, pdb_regex)
 
         # Get mtz
-        self.input_mtz_file = get_input_mtz_file(path, mtz_regex, check_input)
+        self.input_mtz_file = get_input_mtz_file(path, mtz_regex)
 
         # Get the ligands
         self.input_ligands = get_input_ligands(
@@ -241,7 +238,6 @@ class DatasetDir:
             ligand_cif_regex,
             ligand_smiles_regex,
             ligand_pdb_regex,
-            check_input
         )
 
         self.path = path
