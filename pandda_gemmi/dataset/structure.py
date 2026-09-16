@@ -151,7 +151,7 @@ class StructureArray(StructureArrayInterface):
         self.positions = np.array(positions)
 
     @classmethod
-    def from_structure(cls, structure):
+    def from_structure(cls, structure, waters=True):
         models = []
         chains = []
         seq_ids = []
@@ -161,6 +161,9 @@ class StructureArray(StructureArrayInterface):
         for model in structure.structure:
             for chain in model:
                 for residue in chain.first_conformer():
+                    if not waters:
+                        if residue.name == 'HOH':
+                            continue
                     for atom in residue:
                         models.append(model.num)
                         chains.append(chain.name)

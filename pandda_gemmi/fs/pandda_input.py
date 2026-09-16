@@ -13,6 +13,22 @@ def check_pdb_file(path):
         for model in st:
             for chain in model:
                 for residue in chain:
+                    for atom in residue:
+                        num_atoms += 1
+
+        if num_atoms > 1:
+            return True
+    except Exception as e:
+        print(e)
+        return False
+
+def check_pdb_ligand_file(path):
+    try:
+        st = gemmi.read_structure(str(path))
+        num_atoms = 0
+        for model in st:
+            for chain in model:
+                for residue in chain:
                     if residue.name in constants.RESIDUE_NAMES:
                         return False
                     for atom in residue:
@@ -23,7 +39,6 @@ def check_pdb_file(path):
     except Exception as e:
         print(e)
         return False
-
 
 def check_mtz_file(path):
     try:
@@ -138,7 +153,7 @@ def parse_dir_ligands(path: Path, ligand_cif_regex, ligand_smiles_regex, ligand_
         elif re.match(ligand_pdb_regex, name):
             checked = True
             if check_input:
-                checked = check_pdb_file(file_path)
+                checked = check_pdb_ligand_file(file_path)
             if checked:
                 if stem in ligand_keys:
                     ligand_keys[stem].ligand_pdb = file_path

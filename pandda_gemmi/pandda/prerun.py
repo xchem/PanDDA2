@@ -72,7 +72,12 @@ def prerun(args, console, processor):
 
     # Summarise the datasets loaded from the file system and serialize the information on the input into a human
     # readable yaml file
+    if len(datasets) == 0:
+        raise Exception(f'No valid datasets! Most likely the PanDDA is pointing at the wrong directory or was misconfigured')
     console.summarise_datasets(datasets, fs)
+
+
+
     serialize.input_data(
         fs, datasets, fs.output.path / "input.yaml"
     )
@@ -90,6 +95,9 @@ def prerun(args, console, processor):
         dataset_filters.append(FilterNoLigandData())
 
     datasets_to_process, datasets_not_to_process = GetDatasetsToProcess(dataset_filters)(datasets, fs)
+    if len(datasets_to_process) == 0:
+        raise Exception(f'No valid datasets to process after filters! Most likely the PanDDA is pointing at the wrong directory or was misconfigured')
+
     console.summarize_datasets_to_process(datasets_to_process, datasets_not_to_process)
 
     return fs, datasets, datasets_to_process
