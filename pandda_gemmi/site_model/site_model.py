@@ -1401,7 +1401,7 @@ class ResiduePainting:
         alignments = {}
         if existing_alignments:
             alignments.update(existing_alignments)
-        aligned_datasets = set([x[0] for x in alignments] + [alignments[y][x] for y in alignments for x in alignments[y]])
+        aligned_datasets = set([x[0] for x in alignments] + [x for y in alignments for x in alignments[y]])
         dtags_to_align = []
         if site_override:
             dtags_to_align += [site.dtag for site_id, site in site_override.items()]
@@ -1435,9 +1435,12 @@ class ResiduePainting:
 
                     # Otherwise create a new alignment class and add it
                 if matched:
+                    if dtag in [site.dtag for site_id, site in site_override.items()]:
+                        raise Exception(f'The forced alignment for dataset {dtag} can be aligned to other forced alignment {ref_dtag}. Change {dtag} to {ref_dtag} in the forced site definition.')
                     alignments[(ref_dtag, ref_chain)][(dtag, chain.name)] = insertion_mapping
 
                 else:
+
                     alignments[(dtag, chain.name)] = {(dtag, chain.name): self.get_insertion_mapping(sequence, insertions, sequence, insertions)[0]}
                 
         return alignments
@@ -1577,33 +1580,33 @@ class ResiduePainting:
 
         residue_allocations = {}
         sites = {}
-        rprint(event_environments)
+        # rprint(event_environments)
 
         # Allocate the residues of existing sites 
         if existing_sites is not None:
             for site_id, site in existing_sites.items():
                 for residue in site.residues:
-                    if (site.dtag, residue.chain, residue.seqid) not in residue_allocations:
-                        residue_allocations[(site.dtag, residue.chain, residue.seqid)] = site_id
+                    if (site.dtag, residue[0], residue[1]) not in residue_allocations:
+                        residue_allocations[(site.dtag, residue[0], residue[1])] = site_id
                     else:
                         raise Exception(f'A residue is present in two existing sites! Error!')
                 sites[site_id] = site
 
         # Allocate events of existing sites
-        allocated_events = [_event_id for _site_id in sites for _event_id in sites[_site_id]]
+        allocated_events = [_event_id for _site_id in sites for _event_id in sites[_site_id].event_ids]
 
         # Allocate forced sites - error if inconsistent with previous
         if site_overrides:
-            for site_name, site in site_overrides.items():
+            for site_id, site in site_overrides.items():
                 # See if the override is already present 
-                if any([len(set(site.residues).difference(_ref_site.residues)) for _ref_site in sites]):
+                if any([len(set(site.residues).difference(_ref_site.residues)) == 0 for _ref_site in sites.values()]):
                     print(f'Forced site already exists in existing sites!')
                     continue
 
                 # Otherwise see if its residues can be allocated
                 for residue in site.residues:
-                    if (site.dtag, residue.chain, residue.seqid) not in residue_allocations:
-                        residue_allocations[(site.dtag, residue.chain, residue.seqid)] = site_id
+                    if (site.dtag, residue[0], residue[1]) not in residue_allocations:
+                        residue_allocations[(site.dtag, residue[0], residue[1])] = site_id
                     else:
                         raise Exception(f'A residue is present in two existing sites! Error!')
                 sites[len(sites)+1] = site
@@ -1616,12 +1619,12 @@ class ResiduePainting:
             for (aligned_dtag, aligned_chain), alignment in alignments.items():
                 dtag_chain_to_chain_class[(aligned_dtag, aligned_chain)] = (alignment_dtag, alignment_chain,)
 
-        rprint(dtag_chain_to_chain_class)
+        # rprint(dtag_chain_to_chain_class)
 
         correlations = {}
         for ref_event_id, ref_event_env in event_environments.items():
             if events[ref_event_id].score < event_cutoff:
-                rprint(f'Skipping low conf event with score {events[ref_event_id].score}')
+                rprint(f'Skipping low conf event with score {round(events[ref_event_id].score, 2)}')
                 continue
 
             ref_dtag = ref_event_id[0]
@@ -1662,12 +1665,13 @@ class ResiduePainting:
                     distances[(x, y)] = dist
                 else:
                     distances[(x, y)] = 1000
-        rprint(distances)
+        # rprint(distances)
 
-
-        inverse_correlations = np.zeros((len(correlations), len(correlations)))
-        for j, x in enumerate(correlations):
-            for k, y in enumerate(correlations):
+        restricted_correlations = [x for x in correlations if x not in residue_allocations]
+        inverse_correlations = np.zeros((len(restricted_correlations), len(restricted_correlations)))
+        residue_ids = []
+        for j, x in enumerate(restricted_correlations):
+            for k, y in enumerate(restricted_correlations):
                 if x == y:
                     continue
 
@@ -1685,14 +1689,14 @@ class ResiduePainting:
                 else: 
                     inverse_correlations[j, k] = 1000
                 
-        rprint(inverse_correlations)
+        # rprint(inverse_correlations)
         
         linkage = scipy.cluster.hierarchy.linkage(
                     scipy.spatial.distance.squareform(inverse_correlations),
                     method='single',
                     optimal_ordering=True,        
                     )
-        residue_ids = np.array([x for x in correlations])
+        residue_ids = np.array([x for x in restricted_correlations])
 
         # Cut to a max cluster size of 20 residues 
         cophnet = scipy.spatial.distance.squareform(scipy.cluster.hierarchy.cophenet(linkage))
@@ -1702,8 +1706,8 @@ class ResiduePainting:
             for j in np.unique(labels):
                 if j != -1:
                     lens.append(len(residue_ids[labels == j]))
-                rprint(f'{j}: {len(residue_ids[labels == j])} {residue_ids[labels == j]}')
-            rprint(max(lens))
+                # rprint(f'{j}: {len(residue_ids[labels == j])} {residue_ids[labels == j]}')
+            # rprint(max(lens))
             if max(lens) < 30:
                 break
 
@@ -1712,13 +1716,13 @@ class ResiduePainting:
 
             if len(site_resids) > 1:
                 site_number = len(sites)+1
-                sites[site_number] = Site([], np.zeros(3))
+                sites[site_number] = Site([], np.zeros(3), dtag=site_resids[0][0], residues=[(_resid[1], _resid[2]) for _resid in site_resids])
                 for resid in site_resids:
-                    rprint(resid)
+                    # rprint(resid)
                     residue_allocations[tuple(resid)] = site_number 
 
-        rprint(f'Residue allocations')
-        rprint(residue_allocations)
+        # rprint(f'Residue allocations')
+        # rprint(residue_allocations)
 
         # Allocate events to site with most overlaps, breaking ties by lower event number
         for ref_event_id, ref_event_env in event_environments.items():
@@ -1738,23 +1742,22 @@ class ResiduePainting:
             overlaps = {}
             for site_number, site_resids in site_to_ress.items():
                 overlap = set(site_resids).intersection(ref_unified_indexes)
-                rprint(f'{ref_event_id} - {site_number}: {len(overlap)}')
+                # rprint(f'{ref_event_id} - {site_number}: {len(overlap)}')
                 overlaps[site_number] = overlap
 
             max_overlap_site = max(overlaps, key=lambda _x: len(overlaps[_x]))
-            if len(overlaps[max_overlap_site]) > 1:
+            if len(overlaps[max_overlap_site]) >= 1:
                 sites[max_overlap_site].event_ids.append(ref_event_id)
                 allocated_events.append(ref_event_id)
 
             # Handle outliers by creating a new site
             else:
+                rprint(f'\tEvent {ref_event_id} with environment {sorted(ref_unified_indexes)} has no overlaps with existing sites!')
+                rprint(f'\tCreating new site with residues: {sorted([_resid for _resid in ref_unified_indexes if _resid not in residue_allocations])}')
                 new_site_num = len(sites)+1
-                sites[new_site_num] = Site([ref_event_id], np.zeros(3))
+                sites[new_site_num] = Site([ref_event_id], np.zeros(3), dtag=ref_unified_indexes[0][0], residues = [(_resid[1], _resid[2]) for _resid in ref_unified_indexes])
                 for _resid in ref_unified_indexes:
                     if _resid not in residue_allocations:
                         residue_allocations[_resid] = new_site_num
 
-        rprint(residue_allocations)
-        exit()
-
-        return sites
+        return sites, residue_allocations, msa

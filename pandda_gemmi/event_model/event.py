@@ -28,7 +28,8 @@ class Event(EventInterface):
                  ligand_placed=False,
                  ligand_confidence='Low',
                  comment='',
-                 viewed=False
+                 viewed=False,
+                 site_idx=None
                  ):
         self.pos_array = pos_array
         self.point_array = point_array
@@ -43,3 +44,4 @@ class Event(EventInterface):
         self.ligand_confidence: str = ligand_confidence
         self.comment: str = comment
         self.viewed: bool = viewed
+        self.site_idx: int = site_idx

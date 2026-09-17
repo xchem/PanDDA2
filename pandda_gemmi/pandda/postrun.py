@@ -12,12 +12,13 @@ except ImportError:
 
 from pandda_gemmi.interfaces import *
 from pandda_gemmi import constants
-from pandda_gemmi.site_model import HeirarchicalSiteModel, HeirarchicalSiteModelAlignedSequences, Site, get_sites
+from pandda_gemmi.site_model import HeirarchicalSiteModel, HeirarchicalSiteModelAlignedSequences, ResiduePainting, Site, get_sites
 from pandda_gemmi.autobuild.merge import merge_autobuilds, MergeHighestBuildScore, MergeHighestEventScore
 from pandda_gemmi.ranking import rank_events, RankHighEventScoreBySite
 from pandda_gemmi.tables import output_tables
 from pandda_gemmi import serialize
 from pandda_gemmi.event_model.event import Event
+from pandda_gemmi.serialize import read_residue_assignments, read_msa, output_residue_assignments, output_msa
 
 from pandda_gemmi.metrics import get_hit_in_site_probabilities
 
@@ -38,29 +39,85 @@ def postrun(
     # Get existing site and event data (if it exists)
     inspect_table_file = fs.output.analyses_dir / constants.PANDDA_INSPECT_EVENTS_PATH
     inspect_sites_file = fs.output.analyses_dir / constants.PANDDA_INSPECT_SITES_PATH
+    msa_file = fs.output.analyses_dir / constants.PANDDA_MSA_PATH
+    sequence_assignment_file = fs.output.analyses_dir / constants.PANDDA_SEQ_ASSIGN_PATH
+
+    if (not inspect_table_file.exists()) or (msa_file.exists()):
+        print(f'New PanDDA or existing msa - using site model: Residue Painting')
+        site_model = ResiduePainting(
+                t=0.3, 
+                debug=args.debug,
+                distance=10.0
+                )
+    else:
+        print(f'Old PanDDA with no msa - using site model: Hierarchical')
+        site_model = HeirarchicalSiteModelAlignedSequences(t=args.max_site_distance_cutoff, debug=args.debug)
+    
+
 
     if args.site_override_file:
         with open(args.site_override_file, 'r') as f:
             site_overrides = yaml.safe_load(f)
-        existing_events = None
-        existing_sites = None
-    elif inspect_table_file.exists():
+        existing_sites = {}
+        for site_idx, site_info in site_overrides.items():
+            existing_sites[site_idx] = Site(
+            [],
+            np.zeros(3),
+            dtag=site_info['dtag'],
+            residues=[(chain, res) for (chain, res) in site_info['residues']]
+        ),
+    else:
+        site_overrides = None
+
+    # Get the existing events and sites
+    if inspect_table_file.exists():
         inspect_events_table = pd.read_csv(inspect_table_file)
         inspect_sites_table = pd.read_csv(inspect_sites_file)
         print(f'Found existing sites')
         print(inspect_sites_table)
-        existing_events = {(_row['dtag'], int(_row['event_idx'])): _row for _idx, _row in inspect_events_table.iterrows()}
-        existing_sites = {
-            _row['site_idx']: _row
+        existing_events = {
+            (_row['dtag'], _row['event_idx']): Event(
+                np.array([_row['x'], _row['y'], _row['z']]),
+                None,
+                0,
+                np.array([_row['x'], _row['y'], _row['z']]),
+                score=_row['z_peak'],
+                site_idx = _row['site_idx']
+            )
             for _idx, _row
-            in inspect_sites_table.iterrows()
+            in inspect_events_table.iterrows()
         }
-        site_overrides = None
+        if not existing_sites:
+            existing_sites = {}
+        existing_sites.update(
+            {
+                _row['site_idx']: Site(
+                    [event_id for event_id, event in existing_events.items() if event.site_idx == _row['site_idx']],
+                    _row['centroid'],
+                    _row['Name'],
+                    _row['Comment']
+                ) 
+                for _idx, _row 
+                in inspect_sites_table.iterrows()
+            }
+        )
+
     else:
         print(f'Found no existing PanDDA Results at {inspect_table_file}')
         existing_events = None
         existing_sites = None
-        site_overrides = None
+
+    # Get existing site residues and sequence alignments
+    if msa_file.exists() & sequence_assignment_file.exists():
+        residue_assignments = read_residue_assignments(sequence_assignment_file)
+        msa = read_msa(msa_file)
+
+        if existing_sites is not None:
+            site_id_to_residues = {v: [_k for _k in residue_assignments if residue_assignments[_k] == v] for k, v in residue_assignments.items()}
+
+            for site_id, site in sites.items():
+                site.dtag = site_id_to_residues[site_id][0][0]
+                site.residues = [(x[1], x[2]) for x in site_id_to_residues[site_id]]
 
     # Autobuild the best scoring event for each dataset
     console.start_autobuilding()
@@ -85,7 +142,7 @@ def postrun(
     print(f'Event scores: {[event.score for event_id, event in pandda_events.items()]}')
 
     # Get the sites
-    sites: Dict[int, Site] = get_sites(
+    sites, residue_assignments, msa = get_sites(
         datasets,
         pandda_events,
         datasets_to_process[
@@ -94,11 +151,15 @@ def postrun(
                 key=lambda _dtag: datasets_to_process[_dtag].reflections.resolution()
             )
         ],
-        HeirarchicalSiteModelAlignedSequences(t=args.max_site_distance_cutoff, debug=args.debug),
-        existing_events,
-        existing_sites,
-        site_overrides
+        site_model,
+            existing_events,
+            existing_sites,
+            site_overrides,
+            msa
     )
+    output_residue_assignments(residue_assignments, sequence_assignment_file)
+    output_msa(msa, msa_file)
+
     # TODO: Log properly sites
 
     # Rank the events for display in PanDDA inspect
