@@ -21,6 +21,8 @@ from ..dataset.structure import save_structure, load_structure, Structure
 from ..dataset.small import get_fragment_mol_from_dataset_cif_path
 from ..dataset.small import get_comp_block_key
 from .autobuild import AutobuildResult
+from ..args.env import env_flag
+from .local_grid import cut_local_grid_from_sparse
 
 
 def get_fragment_mol_from_dataset_smiles_path(dataset_smiles_path: Path):
@@ -91,6 +93,16 @@ def get_structures_from_mol(mol: Chem.Mol, dataset_cif_path, max_conformers):
     return fragment_structures
 
 
+def _de_seed():
+    """Optional fixed RNG seed for the stochastic autobuild steps
+    (differential_evolution + RDKit conformer embedding), from PANDDA_DE_SEED.
+    Returns int when set, else None (scipy/RDKit default = unseeded). Setting it
+    makes autobuild deterministic so e.g. local-grid vs full-grid runs can be
+    compared without the DE-randomness confound."""
+    v = os.environ.get("PANDDA_DE_SEED")
+    return int(v) if v not in (None, "") else None
+
+
 def get_conformers(
         ligand_files: LigandFilesInterface,
         pruning_threshold=1.5,
@@ -111,6 +123,7 @@ def get_conformers(
             mol,
             numConfs=num_pose_samples,
             pruneRmsThresh=pruning_threshold,
+            randomSeed=(_de_seed() if _de_seed() is not None else -1),
         )
 
         # Translate to structures
@@ -608,6 +621,7 @@ def score_conformer(
                 (-6.0, 6.0), (-6, 6.0), (-6.0, 6.0),
                 (0.0, 1.0), (0.0, 1.0), (0.0, 1.0)
             ],
+            seed=_de_seed(),
             # popsize=30,
         )
         # res = optimize.shgo(
@@ -1121,6 +1135,7 @@ def get_local_signal_dencalc_optimize_bdc(
             masked_calc_vals,
         ),
         [(0.0, 0.95), ],
+        seed=_de_seed(),
     )
 
     # # Get the correlation with the event
@@ -1242,6 +1257,109 @@ def get_contacts(
     ...
 
 
+def _translate_structure(st, vec):
+    """Return a clone of gemmi structure ``st`` shifted by Cartesian ``vec``."""
+    out = st.clone()
+    vx, vy, vz = float(vec[0]), float(vec[1]), float(vec[2])
+    for model in out:
+        for chain in model:
+            for residue in chain:
+                for atom in residue:
+                    p = atom.pos
+                    atom.pos = gemmi.Position(p.x + vx, p.y + vy, p.z + vz)
+    return out
+
+
+def _autobuild_conformer_local(
+        centroid, event_bdc, conformer, masked_dtag_array, masked_mean_array,
+        reference_frame, out_dir, conformer_id, res, structure,
+        unmasked_dtag_array, unmasked_mean_array, z_array, raw_xmap_sparse,
+        score_build, raw_xmap_array_ref, n=96, spacing=0.5):
+    """Memory-light autobuild: cut local boxes from the sparse maps about the event
+    centroid (no full-cell unmask), fit + score (CNN/BDC/signal) entirely in
+    that local box, then map the pose back to the native frame.
+    Mirrors autobuild_conformer's outputs; result is frame-invariant since all
+    scores are translation-invariant."""
+    normalize_z = (z_array - np.mean(z_array)) / np.std(z_array)
+    normalize_xmap = (masked_dtag_array - np.mean(masked_dtag_array)) / np.std(masked_dtag_array)
+    # The fit's score-grid target (same construction as the full path), built
+    # sparsely so it can be cut locally.
+    score_grid_sparse = np.zeros(normalize_z.shape, dtype=np.float32)
+    score_grid_sparse[normalize_xmap > 1.5] = 0.5
+    score_grid_sparse[normalize_z > 1.5] = 1.0
+
+    # One local frame (box_origin is deterministic from centroid/n/spacing, so all
+    # cuts share it).
+    z_local, box_origin = cut_local_grid_from_sparse(reference_frame, normalize_z, centroid, n, spacing)
+    event_local, _ = cut_local_grid_from_sparse(reference_frame, score_grid_sparse, centroid, n, spacing)
+    rawx_local, _ = cut_local_grid_from_sparse(reference_frame, raw_xmap_sparse, centroid, n, spacing)
+    xmap_local, _ = cut_local_grid_from_sparse(reference_frame, masked_dtag_array, centroid, n, spacing)
+    dtag_local, _ = cut_local_grid_from_sparse(reference_frame, unmasked_dtag_array, centroid, n, spacing)
+    mean_local, _ = cut_local_grid_from_sparse(reference_frame, unmasked_mean_array, centroid, n, spacing)
+
+    centroid_local = np.asarray(centroid, dtype=np.float64) - box_origin
+    conf_local = _translate_structure(conformer.structure, -box_origin)
+
+    # Same fit as the full-cell path, on the local box.
+    optimized_local, score, _cen, arr = score_conformer(
+        centroid_local, conf_local, event_local, score_build, z_local, rawx_local)
+
+    predicted_mask = get_predicted_mask(optimized_local, xmap_local)
+    predicted_mask_array = np.array(predicted_mask, copy=False)
+    predicted_density = get_predicted_density(optimized_local, xmap_local)
+    predicted_density_array = np.array(predicted_density, copy=False)
+    try:
+        high = get_predicted_density_high_contour(predicted_density, predicted_mask)
+    except Exception:
+        high = 1.0
+
+    # BDC by maximising calc-vs-event correlation over the ligand mask, on local grids
+    da = np.array(dtag_local, copy=False)
+    me = np.array(mean_local, copy=False)
+    sel = predicted_mask_array >= 2
+    if int(sel.sum()) > 0:
+        rr = optimize.differential_evolution(
+            lambda b: get_correlation(b, da[sel], me[sel], predicted_density_array[sel]),
+            [(0.0, 0.95)], seed=_de_seed())
+        corr = 1 - rr.fun
+        bdc = float(rr.x[0])
+    else:
+        corr, bdc = 0.0, float(event_bdc)
+
+    corrected = (da - bdc * me) / (1 - bdc)
+    signal_vals = get_signal(corrected, predicted_density_array > high)
+    noise_signal_vals = get_signal(corrected, predicted_mask_array == 1)
+    try:
+        optimal_signal_contour = get_optimal_signal_contour(signal_vals, noise_signal_vals)
+    except Exception:
+        optimal_signal_contour = 1.0
+
+    optimized_native = _translate_structure(optimized_local, box_origin)
+    # get_predicted_density stamped the box cell onto the structure; restore the
+    # dataset cell so the saved pdb's CRYST1 is the real one.
+    optimized_native.cell = gemmi.UnitCell(*reference_frame.unit_cell)
+    num_contacts = get_contacts(optimized_native, structure.structure)
+    noise_signal_vals = np.clip(noise_signal_vals, 0.0, 3.0)
+    signal_vals = np.clip(signal_vals, 0.0, 3.0)
+    save_structure(Structure(None, optimized_native), out_dir / f"{conformer_id}.pdb")
+    centroid_native = get_structure_mean(optimized_native)
+
+    return {
+        str(out_dir / f"{conformer_id}.pdb"): {
+            'score': float(score),
+            'centroid': centroid_native,
+            'local_signal': float(corr),
+            'new_bdc': float(bdc),
+            'noise': float(np.abs(np.sum(noise_signal_vals))),
+            'signal': float(np.abs(np.sum(signal_vals))),
+            'num_points': int(np.sum(predicted_density_array > high)),
+            'optimal_contour': float(optimal_signal_contour),
+            'num_contacts': int(num_contacts),
+            'arr': arr,
+        }
+    }
+
+
 def autobuild_conformer(
         centroid,
         event_bdc,
@@ -1260,6 +1378,16 @@ def autobuild_conformer(
         score_build,
         raw_xmap_array_ref
 ):
+    # PANDDA_LOCAL_AUTOBUILD=1 runs the whole build on LOCAL boxes cut from the
+    # sparse maps (no full-cell unmask) -> memory independent of cell size. The
+    # fit and scoring are the same functions as below; only the grids differ.
+    if env_flag("PANDDA_LOCAL_AUTOBUILD"):
+        return _autobuild_conformer_local(
+            centroid, event_bdc, conformer, masked_dtag_array, masked_mean_array,
+            reference_frame, out_dir, conformer_id, res, structure,
+            unmasked_dtag_array, unmasked_mean_array, z_array, raw_xmap_sparse,
+            score_build, raw_xmap_array_ref)
+
     time_begin_autobuild = time.time()
 
 
