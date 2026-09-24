@@ -1293,7 +1293,8 @@ def _autobuild_conformer_local(
     # lattice, so values and positions are the native ones and the fit sees
     # bit-identical density to the full-cell path (see local_grid).
     lo, shape, sub_cell, box_origin = native_subblock_frame(
-        reference_frame, centroid, radius)
+        reference_frame, centroid, radius,
+        align_to=np.asarray(raw_xmap_array_ref).shape)
     z_local = subblock_from_sparse(reference_frame, normalize_z, lo, shape, sub_cell)
     event_local = subblock_from_sparse(reference_frame, score_grid_sparse, lo, shape, sub_cell)
     xmap_local = subblock_from_sparse(reference_frame, masked_dtag_array, lo, shape, sub_cell)
