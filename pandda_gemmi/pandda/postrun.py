@@ -57,15 +57,16 @@ def postrun(
 
     if args.site_override_file:
         with open(args.site_override_file, 'r') as f:
-            site_overrides = yaml.safe_load(f)
+            site_overrides_yaml = yaml.safe_load(f)
         existing_sites = {}
-        for site_idx, site_info in site_overrides.items():
+        for site_idx, site_info in site_overrides_yaml.items():
             existing_sites[site_idx] = Site(
-            [],
-            np.zeros(3),
-            dtag=site_info['dtag'],
-            residues=[(chain, res) for (chain, res) in site_info['residues']]
-        ),
+                [],
+                np.zeros(3),
+                dtag=site_info['dtag'],
+                residues=[(chain, res) for (chain, res) in site_info['residues']]
+                )
+            site_overrides = {_site_idx: _site for _site_idx, _site in existing_sites.items()}
     else:
         site_overrides = None
 
