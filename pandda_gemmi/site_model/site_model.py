@@ -1399,7 +1399,7 @@ class ResiduePainting:
     def get_alignments(self, datasets: Dict[str, DatasetInterface], existing_alignments, site_override):
         # Iterate over chains in datasets, creating alignment classes for acceptably good alignments as necessary
         alignments = {}
-        if existing_alignments:
+        if existing_alignments is not None:
             alignments.update(existing_alignments)
         aligned_datasets = set([x[0] for x in alignments] + [x for y in alignments for x in alignments[y]])
         dtags_to_align = []
@@ -1435,8 +1435,9 @@ class ResiduePainting:
 
                     # Otherwise create a new alignment class and add it
                 if matched:
-                    if dtag in [site.dtag for site_id, site in site_override.items()]:
-                        raise Exception(f'The forced alignment for dataset {dtag} can be aligned to other forced alignment {ref_dtag}. Change {dtag} to {ref_dtag} in the forced site definition.')
+                    if site_override is not None:
+                        if dtag in [site.dtag for site_id, site in site_override.items()]:
+                            raise Exception(f'The forced alignment for dataset {dtag} can be aligned to other forced alignment {ref_dtag}. Change {dtag} to {ref_dtag} in the forced site definition.')
                     alignments[(ref_dtag, ref_chain)][(dtag, chain.name)] = insertion_mapping
 
                 else:
