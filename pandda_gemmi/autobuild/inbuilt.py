@@ -22,7 +22,8 @@ from ..dataset.small import get_fragment_mol_from_dataset_cif_path
 from ..dataset.small import get_comp_block_key
 from .autobuild import AutobuildResult
 from ..args.env import env_flag
-from .local_grid import cut_local_grid_from_sparse, cut_local_grid_from_dense
+from .local_grid import (native_subblock_frame, subblock_from_sparse,
+                         subblock_from_dense)
 
 
 def get_fragment_mol_from_dataset_smiles_path(dataset_smiles_path: Path):
@@ -1274,7 +1275,7 @@ def _autobuild_conformer_local(
         centroid, event_bdc, conformer, masked_dtag_array, masked_mean_array,
         reference_frame, out_dir, conformer_id, res, structure,
         unmasked_dtag_array, unmasked_mean_array, z_array, raw_xmap_sparse,
-        score_build, raw_xmap_array_ref, n=96, spacing=0.5):
+        score_build, raw_xmap_array_ref, radius=24.0):
     """Memory-light autobuild: cut local boxes from the sparse maps about the event
     centroid (no full-cell unmask), fit + score (CNN/BDC/signal) entirely in
     that local box, then map the pose back to the native frame.
@@ -1288,21 +1289,20 @@ def _autobuild_conformer_local(
     score_grid_sparse[normalize_xmap > 1.5] = 0.5
     score_grid_sparse[normalize_z > 1.5] = 1.0
 
-    # One local frame (box_origin is deterministic from centroid/n/spacing, so all
-    # cuts share it).
-    z_local, box_origin = cut_local_grid_from_sparse(reference_frame, normalize_z, centroid, n, spacing)
-    event_local, _ = cut_local_grid_from_sparse(reference_frame, score_grid_sparse, centroid, n, spacing)
-    # The raw xmap is NOT on the reference frame's grid -- it is sampled at
-    # sample_rate=3 while the frame uses resolution/0.4999, so the frame's mask
-    # indices do not address it and `raw_xmap_sparse` is mis-indexed (the
-    # full-cell path sidesteps this by rebuilding the grid from the dense array,
-    # which is what we do here). Cutting from the sparse version instead fed the
-    # build CNN a corrupted xmap channel and moved poses by up to 22 A.
-    rawx_local = cut_local_grid_from_dense(
-        raw_xmap_array_ref, reference_frame.unit_cell, box_origin, n, spacing)
-    xmap_local, _ = cut_local_grid_from_sparse(reference_frame, masked_dtag_array, centroid, n, spacing)
-    dtag_local, _ = cut_local_grid_from_sparse(reference_frame, unmasked_dtag_array, centroid, n, spacing)
-    mean_local, _ = cut_local_grid_from_sparse(reference_frame, unmasked_mean_array, centroid, n, spacing)
+    # One sub-block frame for every channel: an exact block of the native
+    # lattice, so values and positions are the native ones and the fit sees
+    # bit-identical density to the full-cell path (see local_grid).
+    lo, shape, sub_cell, box_origin = native_subblock_frame(
+        reference_frame, centroid, radius)
+    z_local = subblock_from_sparse(reference_frame, normalize_z, lo, shape, sub_cell)
+    event_local = subblock_from_sparse(reference_frame, score_grid_sparse, lo, shape, sub_cell)
+    xmap_local = subblock_from_sparse(reference_frame, masked_dtag_array, lo, shape, sub_cell)
+    dtag_local = subblock_from_sparse(reference_frame, unmasked_dtag_array, lo, shape, sub_cell)
+    mean_local = subblock_from_sparse(reference_frame, unmasked_mean_array, lo, shape, sub_cell)
+    # The raw xmap is on its own lattice (sample_rate=3), so this one channel is
+    # resampled onto the sub-block; `raw_xmap_sparse` cannot be used because the
+    # frame's mask indices do not address that array at all.
+    rawx_local = subblock_from_dense(raw_xmap_array_ref, reference_frame, lo, shape, sub_cell)
 
     centroid_local = np.asarray(centroid, dtype=np.float64) - box_origin
     conf_local = _translate_structure(conformer.structure, -box_origin)
