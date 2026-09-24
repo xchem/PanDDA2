@@ -1282,7 +1282,7 @@ class ResiduePainting:
                     index_list.append(y)
             # index_list = [x for x in set(index_list)]  # Deduplicate
 
-        for index in indexess:
+        for index in index_list:
             chain = structure_array.chains[index]
             assert len(chain) == 1
             residue = structure_array.seq_ids[index]
