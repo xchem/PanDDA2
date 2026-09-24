@@ -1280,7 +1280,7 @@ class ResiduePainting:
             for x in indexess:
                 for y in x:
                     index_list.append(y)
-            index_list = [x for x in set(index_list)]  # Deduplicate
+            # index_list = [x for x in set(index_list)]  # Deduplicate
 
         for index in indexess:
             chain = structure_array.chains[index]
