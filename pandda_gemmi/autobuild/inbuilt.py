@@ -22,7 +22,7 @@ from ..dataset.small import get_fragment_mol_from_dataset_cif_path
 from ..dataset.small import get_comp_block_key
 from .autobuild import AutobuildResult
 from ..args.env import env_flag
-from .local_grid import cut_local_grid_from_sparse
+from .local_grid import cut_local_grid_from_sparse, cut_local_grid_from_dense
 
 
 def get_fragment_mol_from_dataset_smiles_path(dataset_smiles_path: Path):
@@ -1292,7 +1292,14 @@ def _autobuild_conformer_local(
     # cuts share it).
     z_local, box_origin = cut_local_grid_from_sparse(reference_frame, normalize_z, centroid, n, spacing)
     event_local, _ = cut_local_grid_from_sparse(reference_frame, score_grid_sparse, centroid, n, spacing)
-    rawx_local, _ = cut_local_grid_from_sparse(reference_frame, raw_xmap_sparse, centroid, n, spacing)
+    # The raw xmap is NOT on the reference frame's grid -- it is sampled at
+    # sample_rate=3 while the frame uses resolution/0.4999, so the frame's mask
+    # indices do not address it and `raw_xmap_sparse` is mis-indexed (the
+    # full-cell path sidesteps this by rebuilding the grid from the dense array,
+    # which is what we do here). Cutting from the sparse version instead fed the
+    # build CNN a corrupted xmap channel and moved poses by up to 22 A.
+    rawx_local = cut_local_grid_from_dense(
+        raw_xmap_array_ref, reference_frame.unit_cell, box_origin, n, spacing)
     xmap_local, _ = cut_local_grid_from_sparse(reference_frame, masked_dtag_array, centroid, n, spacing)
     dtag_local, _ = cut_local_grid_from_sparse(reference_frame, unmasked_dtag_array, centroid, n, spacing)
     mean_local, _ = cut_local_grid_from_sparse(reference_frame, unmasked_mean_array, centroid, n, spacing)
