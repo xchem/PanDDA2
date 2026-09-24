@@ -1,10 +1,16 @@
-"""Validate cut_local_grid_from_sparse against the full-cell cut it replaces.
+"""The local sub-block must be the native lattice, exactly.
 
-The local cut must reproduce, in the box region, exactly what densifying the whole
-cell and sampling there would give -- on a non-orthogonal (monoclinic) cell, which
-is the hard case. Tested two ways: exactly for a linear field (trilinear is exact,
-so any discrepancy is a geometry/index bug), and against gemmi's own full-grid
-interpolation for a smooth field.
+The point of cutting a native index sub-block rather than a Cartesian box is
+that no interpolation happens: a structure translated into the sub-block frame
+samples the same numbers it would have sampled in the full cell. These tests
+pin that, on a MONOCLINIC cell -- the case where a naive Cartesian box and the
+native lattice disagree most.
+
+History: the first implementation cut a 96^3 box at 0.5 A. The reference frame
+is at resolution/0.4999 (0.458/0.485/0.484 A on BAZ2B), so no box voxel
+coincided with a native one, every value was a trilinear blend, and the
+differential_evolution fit settled in a different basin -- moving real builds by
+a median of 3.4 A while every synthetic test still passed.
 """
 
 import numpy as np
@@ -12,7 +18,7 @@ import gemmi
 import pytest
 
 from pandda_gemmi.autobuild.local_grid import (
-    cut_local_grid_from_sparse, cut_local_grid_from_dense, box_origin_for,
+    native_subblock_frame, subblock_from_sparse, subblock_from_dense,
     _frac_matrix,
 )
 
@@ -23,7 +29,7 @@ class _MockMask:
 
 
 class _MockFrame:
-    """Stand-in for DFrame exposing only what the local cut needs."""
+    """Stand-in for DFrame exposing only what the sub-block cut needs."""
     def __init__(self, unit_cell, spacing, indicies):
         self.unit_cell = unit_cell
         self.spacing = spacing
@@ -39,128 +45,124 @@ def _orth_matrix(cell):
 
 def _synthetic(cell_params, nu, nv, nw, fn):
     """A native gemmi FloatGrid filled with fn(cartesian), plus a MockFrame whose
-    sparse 'mask' is every grid point (so the local cut sees the full density)."""
+    sparse 'mask' is every grid point."""
     cell = gemmi.UnitCell(*cell_params)
     grid = gemmi.FloatGrid(nu, nv, nw)
     grid.set_unit_cell(cell)
     grid.spacegroup = gemmi.SpaceGroup("P 1")
     M = _orth_matrix(cell)
-    iu = np.arange(nu) / nu
-    iv = np.arange(nv) / nv
-    iw = np.arange(nw) / nw
-    fu, fv, fw = np.meshgrid(iu, iv, iw, indexing="ij")
-    frac = np.stack([fu, fv, fw], axis=-1)
-    cart = frac @ M.T
+    fu, fv, fw = np.meshgrid(np.arange(nu) / nu, np.arange(nv) / nv,
+                             np.arange(nw) / nw, indexing="ij")
+    cart = np.stack([fu, fv, fw], axis=-1) @ M.T
     arr = fn(cart).astype(np.float32)
     np.array(grid, copy=False)[:, :, :] = arr
     idx = np.nonzero(np.ones((nu, nv, nw), dtype=np.int8))
-    sparse = arr[idx]
     frame = _MockFrame(cell_params, (nu, nv, nw), idx)
-    return grid, frame, sparse, cell
+    return grid, frame, arr[idx], cell
 
 
 MONO = (50.0, 55.0, 60.0, 90.0, 95.0, 90.0)
+# Deliberately NOT a round spacing, and different on each axis -- 50/109,
+# 55/117, 60/131 -- so a Cartesian box could not coincide with the lattice.
+SHAPE = (109, 117, 131)
 
 
-def test_local_cut_linear_exact():
-    """Linear field -> trilinear is exact, so the local box must equal the field
-    sampled at the box voxels to machine-ish precision (catches geometry/index
-    errors on a non-orthogonal cell)."""
-    def fn(c):
-        return 1.0 + 0.30 * c[..., 0] - 0.20 * c[..., 1] + 0.15 * c[..., 2]
-    grid, frame, sparse, cell = _synthetic(MONO, 80, 88, 96, fn)
+def _smooth(c):
+    return (np.sin(0.25 * c[..., 0]) + np.cos(0.20 * c[..., 1])
+            + 0.5 * np.sin(0.15 * c[..., 2]))
+
+
+def test_subblock_values_are_the_native_values():
+    """Every sub-block voxel must BE a native voxel -- same number, not a
+    resampled approximation of one."""
+    grid, frame, sparse, cell = _synthetic(MONO, *SHAPE, _smooth)
+    native = np.array(grid, copy=False)
     centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.5, 0.5, 0.5)).tolist())
 
-    n, sp = 16, 0.5
-    local, box_origin = cut_local_grid_from_sparse(frame, sparse, centroid, n, sp)
-    got = np.array(local, copy=False)
+    lo, shape, sub_cell, origin = native_subblock_frame(frame, centroid, 8.0)
+    block = np.array(subblock_from_sparse(frame, sparse, lo, shape, sub_cell),
+                     copy=False)
 
-    ax = np.arange(n) * sp
-    gi = np.stack(np.meshgrid(ax, ax, ax, indexing="ij"), axis=-1) + box_origin
-    expected = fn(gi)
-    assert np.allclose(got, expected, atol=2e-3), \
-        f"max dev {np.abs(got - expected).max():.4f}"
+    nu, nv, nw = SHAPE
+    expected = native[np.ix_((np.arange(shape[0]) + lo[0]) % nu,
+                             (np.arange(shape[1]) + lo[1]) % nv,
+                             (np.arange(shape[2]) + lo[2]) % nw)]
+    assert np.array_equal(block, expected), "sub-block is not the native block"
 
 
-def test_local_cut_matches_full_unmask():
-    """Smooth field -> the local cut must match gemmi's own full-grid
-    interpolation at the same box positions (i.e. local cut == full cut)."""
-    def fn(c):
-        return (np.sin(0.25 * c[..., 0]) + np.cos(0.20 * c[..., 1])
-                + 0.5 * np.sin(0.15 * c[..., 2]))
-    grid, frame, sparse, cell = _synthetic(MONO, 80, 88, 96, fn)
+def test_subblock_frame_reproduces_native_sampling_exactly():
+    """THE property the design rests on: sampling the sub-block at a position
+    translated by -origin must equal sampling the full grid at that position.
+
+    Checked at random NON-lattice points, so it tests the geometry (the sub-cell
+    lengths and angles), not just the value copy.
+    """
+    grid, frame, sparse, cell = _synthetic(MONO, *SHAPE, _smooth)
     centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.45, 0.5, 0.55)).tolist())
 
-    n, sp = 24, 0.5
-    local, box_origin = cut_local_grid_from_sparse(frame, sparse, centroid, n, sp)
-    got = np.array(local, copy=False)
+    radius = 8.0
+    lo, shape, sub_cell, origin = native_subblock_frame(frame, centroid, radius)
+    sub = subblock_from_sparse(frame, sparse, lo, shape, sub_cell)
 
-    # reference: sample the FULL native grid at the same native box positions
-    transform = gemmi.Transform()
-    transform.mat.fromlist((np.eye(3) * sp).tolist())
-    transform.vec.fromlist([float(x) for x in box_origin])
-    ref = np.zeros((n, n, n), dtype=np.float32)
-    grid.interpolate_values(ref, transform)
+    rng = np.random.default_rng(0)
+    pts = centroid + rng.uniform(-radius * 0.8, radius * 0.8, size=(200, 3))
+    full_vals = np.array([grid.interpolate_value(gemmi.Position(*p)) for p in pts])
+    sub_vals = np.array([sub.interpolate_value(gemmi.Position(*(p - origin)))
+                         for p in pts])
 
-    assert np.corrcoef(got.ravel(), ref.ravel())[0, 1] > 0.999
-    assert np.sqrt(((got - ref) ** 2).mean()) < 0.02
+    assert np.allclose(full_vals, sub_vals, atol=1e-5), \
+        f"max deviation {np.abs(full_vals - sub_vals).max():.2e}"
+
+
+def test_subblock_covers_the_requested_radius():
+    """The block must contain the whole cube, or the fit can translate a pose
+    out of the density it is being scored against."""
+    _, frame, sparse, cell = _synthetic(MONO, *SHAPE, _smooth)
+    centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.5, 0.5, 0.5)).tolist())
+    radius = 8.0
+    lo, shape, sub_cell, origin = native_subblock_frame(frame, centroid, radius)
+
+    M_sub = _orth_matrix(sub_cell)
+    for corner in [(-1, -1, -1), (1, 1, 1), (1, -1, 1), (-1, 1, -1)]:
+        p = centroid + radius * np.array(corner) - origin
+        frac = np.linalg.solve(M_sub, p)
+        assert np.all(frac >= 0) and np.all(frac <= 1), \
+            f"corner {corner} falls outside the sub-block at frac {frac}"
+
+
+def test_dense_channel_resampled_onto_the_same_subblock():
+    """The raw xmap is on its own lattice (sample_rate=3 vs resolution/0.4999),
+    so the frame's mask indices do not address it -- it must be resampled onto
+    the sub-block from its own dense array.
+
+    Regression: cutting it via the frame's sparse indices silently read the
+    wrong voxels, corrupting the build CNN's xmap channel and moving poses by
+    up to 22 A.
+    """
+    _, frame, _, cell = _synthetic(MONO, *SHAPE, _smooth)
+    raw_grid, _, _, _ = _synthetic(MONO, 60, 66, 72, _smooth)   # coarser lattice
+    raw_dense = np.array(raw_grid, copy=False)
+    assert raw_dense.shape != SHAPE, "shapes must differ for this test to mean anything"
+
+    centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.45, 0.5, 0.55)).tolist())
+    lo, shape, sub_cell, origin = native_subblock_frame(frame, centroid, 8.0)
+    got = np.array(subblock_from_dense(raw_dense, frame, lo, shape, sub_cell),
+                   copy=False)
+
+    # Reference: gemmi interpolating the raw grid at the sub-block voxel
+    # positions, i.e. what the full-cell path's CNN would have sampled.
+    M_sub = _orth_matrix(sub_cell)
+    idx = np.stack(np.meshgrid(*[np.arange(s) for s in shape], indexing="ij"),
+                   axis=-1).reshape(-1, 3) / np.array(shape)
+    cart = idx @ M_sub.T + origin
+    ref = np.array([raw_grid.interpolate_value(gemmi.Position(*p)) for p in cart])
+    ref = ref.reshape(shape)
+
+    assert np.corrcoef(got.ravel(), ref.ravel())[0, 1] > 0.9999
+    assert np.abs(got - ref).max() < 1e-4
 
 
 def test_frac_matrix_inverts_orth():
     """Sanity: F (frac<-cart) is the inverse of the orthogonalisation matrix."""
     cell = gemmi.UnitCell(*MONO)
-    F = _frac_matrix(cell)
-    O = _orth_matrix(cell)
-    assert np.allclose(F @ O, np.eye(3), atol=1e-6)
-
-
-def test_dense_cut_matches_gemmi_on_a_DIFFERENT_grid():
-    """The raw xmap is sampled independently of the reference frame (sample_rate=3
-    vs resolution/0.4999), so it has a different shape and the frame's mask
-    indices do not address it at all. cut_local_grid_from_dense must cut from
-    that array on its OWN geometry and match gemmi's interpolation of it.
-
-    Regression: cutting the raw xmap with cut_local_grid_from_sparse instead
-    (i.e. via mask indices belonging to another grid) silently read the wrong
-    voxels, corrupted the build CNN's xmap channel, and moved real poses by up
-    to 22 A -- while every synthetic test still passed, because they all used a
-    single grid for everything.
-    """
-    def fn(c):
-        return (np.sin(0.21 * c[..., 0]) + np.cos(0.17 * c[..., 1])
-                + 0.5 * np.sin(0.13 * c[..., 2]))
-
-    # Reference frame at one sampling ...
-    _, frame, _, cell = _synthetic(MONO, 80, 88, 96, fn)
-    # ... and the "raw xmap" on a coarser, differently-shaped grid, same cell.
-    raw_grid, _, _, _ = _synthetic(MONO, 50, 55, 60, fn)
-    raw_dense = np.array(raw_grid, copy=False)
-    assert raw_dense.shape != tuple(frame.spacing), "shapes must differ for this test"
-
-    centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.45, 0.5, 0.55)).tolist())
-    n, sp = 24, 0.5
-    box_origin = box_origin_for(centroid, n, sp)
-
-    got = np.array(cut_local_grid_from_dense(raw_dense, MONO, box_origin, n, sp), copy=False)
-
-    # Reference: gemmi interpolating the raw grid itself at the box positions.
-    transform = gemmi.Transform()
-    transform.mat.fromlist((np.eye(3) * sp).tolist())
-    transform.vec.fromlist([float(x) for x in box_origin])
-    ref = np.zeros((n, n, n), dtype=np.float32)
-    raw_grid.interpolate_values(ref, transform)
-
-    assert np.corrcoef(got.ravel(), ref.ravel())[0, 1] > 0.999
-    assert np.sqrt(((got - ref) ** 2).mean()) < 0.02
-
-
-def test_box_origin_is_shared_across_cuts():
-    """Every cut about one centroid must land on the same local frame, or the
-    channels handed to the scorer are mutually offset."""
-    def fn(c):
-        return c[..., 0] * 0.1
-    _, frame, sparse, cell = _synthetic(MONO, 80, 88, 96, fn)
-    centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.5, 0.5, 0.5)).tolist())
-    n, sp = 16, 0.5
-    _, origin_sparse = cut_local_grid_from_sparse(frame, sparse, centroid, n, sp)
-    assert np.allclose(origin_sparse, box_origin_for(centroid, n, sp))
+    assert np.allclose(_frac_matrix(cell) @ _orth_matrix(cell), np.eye(3), atol=1e-6)

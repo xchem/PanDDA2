@@ -1,21 +1,40 @@
-"""Local unmask: build a small density box from the sparse representation WITHOUT
-allocating the full unit cell.
+"""Local unmask: build a small density grid around an event WITHOUT allocating
+the full unit cell.
 
-This is the foundation of the ``PANDDA_LOCAL_AUTOBUILD`` path. PanDDA stores per-event/model maps sparsely
-(``reference_frame.mask.indicies`` = a 3-tuple ``(U,V,W)`` of native-grid indices,
-``sparse.data[i]`` the value at ``(U[i],V[i],W[i])`` on the native ``(nu,nv,nw)``
-P1 grid). ``reference_frame.unmask`` densifies the WHOLE cell -- catastrophic when
-the cell has a ~190 A axis and it runs per (model x event x conformer) task.
+PanDDA stores per-event/model maps sparsely (``reference_frame.mask.indicies``
+is a 3-tuple ``(U,V,W)`` of native-grid indices, ``sparse.data[i]`` the value at
+``(U[i],V[i],W[i])`` on the native ``(nu,nv,nw)`` P1 grid).
+``reference_frame.unmask`` densifies the WHOLE cell, and autobuild does that
+five or six times per (model x event x conformer) task.
 
-``cut_local_grid_from_sparse`` instead resamples an orthonormal n^3 box about the
-event centroid directly from the sparse points in the box's native footprint. The
-returned grid lives in a LOCAL frame: box corner -> (0,0,0). Translate structures
-by ``-box_origin`` to score/fit against it, and add ``box_origin`` back to map a
-fitted pose into the native frame. Scoring (RSCC, CNN, masks) is
-translation-invariant, so the local frame changes nothing but the memory.
+The grid built here is an **exact sub-block of the native lattice**: native
+indices ``lo:lo+shape``, values copied verbatim, in a cell whose lengths are
+scaled by ``shape/spacing`` and whose angles are the native ones. That choice is
+what makes the local path equivalent to the full-cell one rather than merely
+similar:
+
+    the orthogonalisation matrix of the sub-cell is ``M_sub = M @ diag(d/n)``,
+    so for a voxel at sub-block index ``p`` (native index ``lo + p``)
+
+        M_sub @ (p/d) = M @ ((lo + p)/n) - M @ (lo/n) = cart_native - origin
+
+    i.e. a structure translated by ``-origin`` samples the sub-block at exactly
+    the positions it would have sampled in the full grid, and the values there
+    are the same numbers. No interpolation, so no resampling error.
+
+A Cartesian cube at some round spacing (the obvious first design) does NOT have
+this property: unless the box spacing divides the native spacing, every voxel is
+a trilinear blend, the density-fit objective is subtly different, and the
+differential_evolution search settles in a different basin. Measured on BAZ2B,
+that moved real builds by a median of 3.4 A.
+
+Scoring (CNN, RSCC, masks, BDC) is translation-invariant, so working in the
+sub-block frame changes nothing but the memory.
 """
 
 from __future__ import annotations
+
+import itertools
 
 import numpy as np
 import gemmi
@@ -30,59 +49,72 @@ def _frac_matrix(cell: gemmi.UnitCell) -> np.ndarray:
     return np.array([[c.x, c.y, c.z] for c in cols]).T
 
 
-def _trilinear_window(window: np.ndarray, coords: np.ndarray, shape: tuple) -> np.ndarray:
-    """Trilinear sample ``window`` (a periodic native-lattice block) at fractional
-    window-index ``coords`` (N,3); periodic wrap via modulo on the window shape's
-    parent lattice is handled by the caller folding indices in. Out-of-window
-    contributions are treated as 0 (unmasked native points are 0 in PanDDA)."""
-    n0, n1, n2 = window.shape
-    i0 = np.floor(coords).astype(np.int64)
-    f = coords - i0
-    out = np.zeros(coords.shape[0], dtype=np.float64)
-    for di in (0, 1):
-        for dj in (0, 1):
-            for dk in (0, 1):
-                ii = i0[:, 0] + di
-                jj = i0[:, 1] + dj
-                kk = i0[:, 2] + dk
-                inb = (ii >= 0) & (ii < n0) & (jj >= 0) & (jj < n1) & \
-                      (kk >= 0) & (kk < n2)
-                wt = (np.where(di, f[:, 0], 1 - f[:, 0]) *
-                      np.where(dj, f[:, 1], 1 - f[:, 1]) *
-                      np.where(dk, f[:, 2], 1 - f[:, 2]))
-                idx = np.where(inb)[0]
-                out[idx] += wt[idx] * window[ii[idx], jj[idx], kk[idx]]
-    return out
+def native_subblock_frame(reference_frame, centroid, radius: float):
+    """Native-index sub-block covering the Cartesian cube of half-width
+    ``radius`` about ``centroid``.
+
+    Returns ``(lo, shape, sub_cell, origin)``: the native index of the block
+    corner, its dimensions, the gemmi cell to give the sub-block grid, and the
+    native Cartesian position of its (0,0,0) voxel. Every channel for one event
+    must be cut on this same frame, or the grids handed to the scorer are
+    mutually offset.
+    """
+    cell = gemmi.UnitCell(*reference_frame.unit_cell)
+    n = np.asarray(reference_frame.spacing, dtype=np.float64)
+
+    # Fractional -> native-index coords of the cube's 8 corners; the sub-block
+    # is their bounding box (+1 voxel margin, so interpolation at the cube face
+    # still has neighbours on both sides).
+    offs = np.array(list(itertools.product((-1.0, 1.0), repeat=3)))
+    corners = np.asarray(centroid, dtype=np.float64)[None, :] + radius * offs
+    gi = (corners @ _frac_matrix(cell).T) * n[None, :]
+    lo = np.floor(gi.min(0)).astype(np.int64) - 1
+    hi = np.ceil(gi.max(0)).astype(np.int64) + 2
+    shape = tuple(int(v) for v in (hi - lo))
+
+    # Same angles, lengths scaled by the fraction of the cell the block spans.
+    sub_cell = gemmi.UnitCell(
+        cell.a * shape[0] / n[0], cell.b * shape[1] / n[1], cell.c * shape[2] / n[2],
+        cell.alpha, cell.beta, cell.gamma)
+
+    o = cell.orthogonalize(gemmi.Fractional(*(lo / n)))
+    return lo, shape, sub_cell, np.array([o.x, o.y, o.z], dtype=np.float64)
 
 
-def box_origin_for(centroid, n: int, spacing: float) -> np.ndarray:
-    """Native Cartesian position of box voxel (0,0,0), snapped to the box
-    lattice so that every cut about the same centroid shares one local frame."""
-    centroid = np.asarray(centroid, dtype=np.float64)
-    half = (n / 2.0) * spacing
-    return np.round((centroid - half) / spacing) * spacing
+def _as_grid(values: np.ndarray, sub_cell: gemmi.UnitCell) -> gemmi.FloatGrid:
+    grid = gemmi.FloatGrid(*values.shape)
+    grid.set_unit_cell(sub_cell)
+    grid.spacegroup = gemmi.SpaceGroup("P 1")
+    np.array(grid, copy=False)[:, :, :] = values
+    return grid
 
 
-def _box_cart(box_origin: np.ndarray, n: int, spacing: float) -> np.ndarray:
-    """(n^3, 3) native Cartesian positions of the box voxels."""
-    ax = np.arange(n, dtype=np.float64) * spacing
-    grid_ijk = np.stack(np.meshgrid(ax, ax, ax, indexing="ij"), axis=-1)
-    return (grid_ijk + box_origin[None, None, None, :]).reshape(-1, 3)
+def subblock_from_sparse(reference_frame, sparse_data, lo, shape,
+                         sub_cell) -> gemmi.FloatGrid:
+    """Copy the sparse values whose native index falls in the sub-block. Exact:
+    the values are the native ones, at their native positions.
 
+    Points outside the mask are 0, which is what ``unmask`` puts there too.
+    """
+    nu, nv, nw = reference_frame.spacing
+    U, V, W = reference_frame.mask.indicies
+    data = np.asarray(sparse_data, dtype=np.float32)
 
-def _as_local_grid(values: np.ndarray, n: int, spacing: float) -> gemmi.FloatGrid:
-    local = gemmi.FloatGrid(n, n, n)
-    local.set_unit_cell(gemmi.UnitCell(n * spacing, n * spacing, n * spacing,
-                                       90.0, 90.0, 90.0))
-    local.spacegroup = gemmi.SpaceGroup("P 1")
-    np.array(local, copy=False)[:, :, :] = values
-    return local
+    # A native point recurs every n indices, so fold into the block by modulo.
+    uu = (U.astype(np.int64) - lo[0]) % nu
+    vv = (V.astype(np.int64) - lo[1]) % nv
+    ww = (W.astype(np.int64) - lo[2]) % nw
+    sel = (uu < shape[0]) & (vv < shape[1]) & (ww < shape[2])
+
+    block = np.zeros(shape, dtype=np.float32)
+    block[uu[sel], vv[sel], ww[sel]] = data[sel]
+    return _as_grid(block, sub_cell)
 
 
 def _trilinear_periodic(arr: np.ndarray, coords: np.ndarray) -> np.ndarray:
     """Trilinear sample of a full-cell dense array at fractional grid ``coords``
     (N,3), wrapping periodically -- the array spans the whole cell, so an index
-    outside it is the same density one cell over."""
+    past its end is the same density one cell over."""
     n0, n1, n2 = arr.shape
     i0 = np.floor(coords).astype(np.int64)
     f = coords - i0
@@ -99,61 +131,28 @@ def _trilinear_periodic(arr: np.ndarray, coords: np.ndarray) -> np.ndarray:
     return out
 
 
-def cut_local_grid_from_dense(dense_array, unit_cell, box_origin,
-                              n: int, spacing: float) -> gemmi.FloatGrid:
-    """Cut the same local box from a DENSE full-cell array that has its own
-    sampling, independent of the reference frame's.
+def subblock_from_dense(dense_array, reference_frame, lo, shape,
+                        sub_cell) -> gemmi.FloatGrid:
+    """Sample a dense full-cell array that is on its OWN lattice onto the
+    sub-block's voxel positions.
 
     Needed for the raw xmap: it is sampled at ``sample_rate=3`` while the
     reference frame uses ``resolution/0.4999``, so the two grids have different
-    shapes and the frame's mask indices do not address this array at all. Only
-    the unit cell is shared -- which is enough, because the box is defined in
-    Cartesian space.
+    shapes and the frame's mask indices do not address this array at all (the
+    ``raw_xmap_sparse`` that process_dataset builds is mis-indexed for exactly
+    this reason, which is why the full-cell path ignores it and rebuilds from
+    the dense array). Only the unit cell is shared -- enough, because both
+    lattices span it, so sub-block voxel ``p`` sits at fractional ``(lo+p)/n``
+    in either.
+
+    This one channel is interpolated; the density-fit objective is not.
     """
     arr = np.asarray(dense_array, dtype=np.float32)
-    cell = gemmi.UnitCell(*unit_cell)
-    box_origin = np.asarray(box_origin, dtype=np.float64)
+    n = np.asarray(reference_frame.spacing, dtype=np.float64)
+    m = np.asarray(arr.shape, dtype=np.float64)
 
-    frac = _box_cart(box_origin, n, spacing) @ _frac_matrix(cell).T
-    gi = frac * np.array(arr.shape, dtype=np.float64)
-    vals = _trilinear_periodic(arr, gi).reshape(n, n, n).astype(np.float32)
-    return _as_local_grid(vals, n, spacing)
-
-
-def cut_local_grid_from_sparse(reference_frame, sparse_data, centroid,
-                               n: int, spacing: float):
-    """Resample an orthonormal n^3 box (A spacing) about ``centroid`` from the
-    sparse density, without densifying the full cell.
-
-    Returns ``(local_grid, box_origin)`` -- a P1 gemmi FloatGrid with cubic cell
-    ``n*spacing`` holding the density in box-local frame, and ``box_origin`` (the
-    native Cartesian position of box voxel (0,0,0)). Native pos of voxel (i,j,k)
-    = box_origin + (i,j,k)*spacing; the grid stores that density at box-frame
-    (i,j,k)*spacing, so sample/score with structures translated by -box_origin.
-    """
-    cell = gemmi.UnitCell(*reference_frame.unit_cell)
-    nu, nv, nw = reference_frame.spacing
-    U, V, W = reference_frame.mask.indicies
-    data = np.asarray(sparse_data, dtype=np.float32)
-
-    box_origin = box_origin_for(centroid, n, spacing)
-
-    # Native fractional -> native grid coords for every box voxel.
-    frac = _box_cart(box_origin, n, spacing) @ _frac_matrix(cell).T
-    gi = frac * np.array([nu, nv, nw])
-
-    # Native-index footprint of the box (with margin), then build the window.
-    lo = np.floor(gi.min(0)).astype(np.int64) - 2
-    hi = np.ceil(gi.max(0)).astype(np.int64) + 3
-    shp = (int(hi[0] - lo[0]), int(hi[1] - lo[1]), int(hi[2] - lo[2]))
-    window = np.zeros(shp, dtype=np.float32)
-    # Scatter sparse points whose (periodically folded) index lands in the window.
-    uu = (U.astype(np.int64) - lo[0]) % nu
-    vv = (V.astype(np.int64) - lo[1]) % nv
-    ww = (W.astype(np.int64) - lo[2]) % nw
-    sel = (uu < shp[0]) & (vv < shp[1]) & (ww < shp[2])
-    window[uu[sel], vv[sel], ww[sel]] = data[sel]
-
-    # Sample the box from the window (coords relative to window origin `lo`).
-    vals = _trilinear_window(window, gi - lo[None, :], shp).reshape(n, n, n).astype(np.float32)
-    return _as_local_grid(vals, n, spacing), box_origin
+    idx = np.stack(np.meshgrid(*[np.arange(s) for s in shape], indexing="ij"),
+                   axis=-1).reshape(-1, 3).astype(np.float64)
+    gi = ((idx + lo[None, :]) / n[None, :]) * m[None, :]
+    vals = _trilinear_periodic(arr, gi).reshape(shape).astype(np.float32)
+    return _as_grid(vals, sub_cell)
