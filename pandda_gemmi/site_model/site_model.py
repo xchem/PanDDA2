@@ -1273,9 +1273,20 @@ class ResiduePainting:
         )
         res_ids = {}
 
+        index_list = []
+        if isinstance(indexess, list):
+            index_list = indexess
+        else:
+            for x in indexess:
+                for y in x:
+                    index_list.append(y)
+            index_list = [x for x in set(index_list)]  # Deduplicate
+
         for index in indexess:
             chain = structure_array.chains[index]
+            assert len(chain) == 1
             residue = structure_array.seq_ids[index]
+
 
             # for chain, res in zip(chains, residues):
             res_ids[(str(chain), str(residue))] = True
