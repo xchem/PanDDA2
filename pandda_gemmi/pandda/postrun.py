@@ -118,6 +118,8 @@ def postrun(
             for site_id, site in sites.items():
                 site.dtag = site_id_to_residues[site_id][0][0]
                 site.residues = [(x[1], x[2]) for x in site_id_to_residues[site_id]]
+    else:
+        msa = None
 
     # Autobuild the best scoring event for each dataset
     console.start_autobuilding()
