@@ -45,6 +45,9 @@ PANDDA_TOTAL_MASK_FILE = "total_mask.ccp4"
 PANDDA_MEAN_MAP_FILE = "{dtag}-ground-state-average-map.native.ccp4"
 PANDDA_SIGMA_S_M_FILE = "sigma_s_m_{number}_{res}.ccp4"
 
+PANDDA_MSA_PATH = 'msa.yaml'
+PANDDA_SEQ_ASSIGN_PATH = 'sequence_assignment.yaml'
+
 ###################################################################
 # # Logging constants
 ###################################################################
