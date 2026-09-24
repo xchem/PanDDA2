@@ -49,7 +49,24 @@ def _frac_matrix(cell: gemmi.UnitCell) -> np.ndarray:
     return np.array([[c.x, c.y, c.z] for c in cols]).T
 
 
-def native_subblock_frame(reference_frame, centroid, radius: float):
+def _common_lattice_step(n: np.ndarray, other) -> np.ndarray:
+    """Index period on which lattice ``n`` and lattice ``other`` (both spanning
+    the same cell) share grid points: ``n / gcd(n, other)``.
+
+    With n=(180,200,120) and other=(150,180,108) that is (6,10,10). Snapping the
+    sub-block corner AND extent to this lets the second lattice be cut as an
+    EXACT sub-block too, sharing a Cartesian origin with the first, instead of
+    being resampled onto it.
+    """
+    if other is None:
+        return np.ones(3, dtype=np.int64)
+    n = n.astype(np.int64)
+    other = np.asarray(other, dtype=np.int64)
+    return n // np.gcd(n, other)
+
+
+def native_subblock_frame(reference_frame, centroid, radius: float,
+                          align_to=None):
     """Native-index sub-block covering the Cartesian cube of half-width
     ``radius`` about ``centroid``.
 
@@ -70,6 +87,12 @@ def native_subblock_frame(reference_frame, centroid, radius: float):
     gi = (corners @ _frac_matrix(cell).T) * n[None, :]
     lo = np.floor(gi.min(0)).astype(np.int64) - 1
     hi = np.ceil(gi.max(0)).astype(np.int64) + 2
+    # Snap corner DOWN and extent UP onto lattice points shared with
+    # `align_to`, so that lattice's sub-block has the same Cartesian origin and
+    # a whole number of its voxels -- i.e. it can be cut exactly too.
+    step = _common_lattice_step(n, align_to)
+    lo = (lo // step) * step
+    hi = -((-hi) // step) * step          # ceil-divide, staying integral
     shape = tuple(int(v) for v in (hi - lo))
 
     # Same angles, lengths scaled by the fraction of the cell the block spans.
@@ -150,6 +173,23 @@ def subblock_from_dense(dense_array, reference_frame, lo, shape,
     arr = np.asarray(dense_array, dtype=np.float32)
     n = np.asarray(reference_frame.spacing, dtype=np.float64)
     m = np.asarray(arr.shape, dtype=np.float64)
+
+    # If this lattice's grid points coincide with the sub-block corner and its
+    # voxels divide evenly, take the exact block -- no interpolation at all.
+    ratio = m / n
+    lo_other = lo * ratio
+    if (np.allclose(lo_other, np.round(lo_other)) and
+            np.allclose(np.asarray(shape) * ratio, np.round(np.asarray(shape) * ratio))):
+        lo_o = np.round(lo_other).astype(np.int64)
+        shp_o = tuple(int(v) for v in np.round(np.asarray(shape) * ratio))
+        m_i = arr.shape
+        block = arr[np.ix_((np.arange(shp_o[0]) + lo_o[0]) % m_i[0],
+                           (np.arange(shp_o[1]) + lo_o[1]) % m_i[1],
+                           (np.arange(shp_o[2]) + lo_o[2]) % m_i[2])]
+        sub_cell_o = gemmi.UnitCell(
+            sub_cell.a, sub_cell.b, sub_cell.c,
+            sub_cell.alpha, sub_cell.beta, sub_cell.gamma)
+        return _as_grid(np.ascontiguousarray(block), sub_cell_o)
 
     idx = np.stack(np.meshgrid(*[np.arange(s) for s in shape], indexing="ij"),
                    axis=-1).reshape(-1, 3).astype(np.float64)

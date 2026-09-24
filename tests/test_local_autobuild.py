@@ -166,3 +166,50 @@ def test_frac_matrix_inverts_orth():
     """Sanity: F (frac<-cart) is the inverse of the orthogonalisation matrix."""
     cell = gemmi.UnitCell(*MONO)
     assert np.allclose(_frac_matrix(cell) @ _orth_matrix(cell), np.eye(3), atol=1e-6)
+
+
+def test_aligned_dense_channel_is_exact_not_resampled():
+    """With align_to, the second lattice's sub-block is EXACT too.
+
+    The raw xmap is on its own lattice, and resampling it was the last residual
+    difference from the full-cell path: it feeds the build CNN's xmap channel,
+    which arbitrates between near-tied DE restarts, so a hair of interpolation
+    error flipped one build by 0.35 A. Both lattices divide the same cell, so
+    snapping the block to their shared grid points makes both exact.
+    """
+    ref_shape, raw_shape = (60, 80, 60), (50, 72, 54)
+    _, frame, _, cell = _synthetic(MONO, *ref_shape, _smooth)
+    raw_grid, _, _, _ = _synthetic(MONO, *raw_shape, _smooth)
+    raw_dense = np.array(raw_grid, copy=False)
+
+    centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.45, 0.5, 0.55)).tolist())
+    lo, shape, sub_cell, origin = native_subblock_frame(
+        frame, centroid, 6.0, align_to=raw_shape)
+
+    got = np.array(subblock_from_dense(raw_dense, frame, lo, shape, sub_cell),
+                   copy=False)
+
+    # The exact block of the RAW lattice covering the same region.
+    ratio = np.array(raw_shape) / np.array(ref_shape)
+    lo_o = np.round(lo * ratio).astype(int)
+    shp_o = tuple(int(v) for v in np.round(np.array(shape) * ratio))
+    expected = raw_dense[np.ix_((np.arange(shp_o[0]) + lo_o[0]) % raw_shape[0],
+                                (np.arange(shp_o[1]) + lo_o[1]) % raw_shape[1],
+                                (np.arange(shp_o[2]) + lo_o[2]) % raw_shape[2])]
+
+    assert got.shape == expected.shape, f"{got.shape} != {expected.shape}"
+    assert np.array_equal(got, expected), "aligned dense channel was resampled, not copied"
+
+
+def test_aligned_block_still_covers_the_radius():
+    """Snapping grows the block; it must still contain the requested cube."""
+    ref_shape, raw_shape = (60, 80, 60), (50, 72, 54)
+    _, frame, _, cell = _synthetic(MONO, *ref_shape, _smooth)
+    centroid = np.array(cell.orthogonalize(gemmi.Fractional(0.5, 0.5, 0.5)).tolist())
+    radius = 6.0
+    lo, shape, sub_cell, origin = native_subblock_frame(
+        frame, centroid, radius, align_to=raw_shape)
+    M_sub = _orth_matrix(sub_cell)
+    for corner in [(-1, -1, -1), (1, 1, 1), (1, -1, 1), (-1, 1, -1)]:
+        frac = np.linalg.solve(M_sub, centroid + radius * np.array(corner) - origin)
+        assert np.all(frac >= 0) and np.all(frac <= 1), f"corner {corner} outside"
