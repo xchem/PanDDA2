@@ -130,7 +130,11 @@ class ProcessModel:
             for lid, ligand_data in ligand_files.items():
                 confs = get_conformers(ligand_data)
                 for event_id, event in events.items():
-                    conf = set_structure_mean(confs[0], event.centroid)
+                    conf = set_structure_mean(
+                        confs[0], 
+                                            #   event.centroid
+                        np.array((8.0, 8.0, 8.0))
+                                              )
                     event_score, map_array, mol_array = score(
                         event,
                         conf,

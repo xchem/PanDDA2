@@ -9,6 +9,8 @@ from torch.nn import functional as F
 # import lightning as lt
 import pytorch_lightning as lt
 
+from edanalyzer.datasets.event_scoring import get_ligand_array_from_lig_frame
+
 from .interfaces import *
 from .base import transform_from_arrays, SampleFrame, grid_from_template, get_ligand_mask, get_structure_array, copy_map, _get_ed_mask_float
 from .constants import SAMPLE_SIZE, SAMPLE_SPACING
@@ -111,9 +113,10 @@ class LitEventScoring(lt.LightningModule):
 
 class EventScorer:
 
-    def __init__(self, model, config, debug=False):
+    def __init__(self, model, config, table=None, debug=False):
         self.model = model.eval().float()
         self.config = config
+        self.table = table
         self.debug=debug
 
     def __call__(self, event: EventI, ligand_conformation: StructureI, zmap: GridI, xmap: GridI) -> float:
@@ -128,22 +131,34 @@ class EventScorer:
         # mask = _get_ed_mask_float()
 
         # Get the xmap sample
-        xmap_sample = sample_frame(xmap, scale=False)
+        if self.config['rescale_x']:
+            xmap_sample = sample_frame(xmap, scale=True)
+        else:
+            xmap_sample = sample_frame(xmap, scale=False)
 
         # Get the zmap sample
         zmap_sample = sample_frame(zmap, scale=False)
 
         if self.config['ligand']:
             # Get the ligand mask sample
-            ligand_mask = get_ligand_mask(ligand_conformation, zmap)
-            ligand_mask_sample = sample_frame(ligand_mask, scale=False)
+            # ligand_mask = get_ligand_mask(ligand_conformation, zmap)
+            # ligand_mask_sample = sample_frame(ligand_mask, scale=False)
+            ligand_frame = {
+                'n': self.config['sample_size'],
+                'd': self.config['sample_spacing'],
+                'orientation': np.eye(3)  
+            }
+            ligand_mask_sample = get_ligand_array_from_lig_frame(
+                ligand_conformation[0][0][0],
+                ligand_frame
+                )
 
             #
             _density_mask = (zmap_sample > self.config['z_cutoff']).astype(int)
             density_mask = expand_labels(_density_mask, distance=self.config['z_mask_radius'] / 0.5)
             density_mask[density_mask != 1] = 0
         else:
-            ligand_mask_sample = np.zeros(sample_frame.spacing, np.float32)
+            ligand_mask_sample = np.zeros((6, self.config['sample_size'], self.config['sample_size'], self.config['sample_size']), np.float32)
             density_mask = _get_ed_mask_float(self.config['xmap_radius'])
 
         if self.debug:
@@ -167,12 +182,26 @@ class EventScorer:
                     ligand_mask_sample
                 ],
             dtype=np.float32
-            )[np.newaxis,:]
+            )
+        # mol_array = ligand_mask_sample
 
-        return self.model(
+        score = self.model(
             None,
             torch.from_numpy(map_array),
             torch.from_numpy(mol_array),
             None
 
-        ).detach().numpy()[0][2], map_array, mol_array
+        ).detach().numpy()[0][1]
+
+        print(f'Raw score: {score}')
+
+        if self.table is not None:
+            higher_scores = self.table[self.table['x']>score]['p']
+            if len(higher_scores) == 0:
+                rescaled_score = 1.0
+            else:
+                rescaled_score = higher_scores.iloc[0]
+        else:
+            rescaled_score = score
+
+        return rescaled_score, map_array, mol_array
