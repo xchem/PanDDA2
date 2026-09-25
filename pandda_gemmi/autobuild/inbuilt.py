@@ -1275,12 +1275,17 @@ def _autobuild_conformer_local(
         centroid, event_bdc, conformer, masked_dtag_array, masked_mean_array,
         reference_frame, out_dir, conformer_id, res, structure,
         unmasked_dtag_array, unmasked_mean_array, z_array, raw_xmap_sparse,
-        score_build, raw_xmap_array_ref, radius=24.0):
+        score_build, raw_xmap_array_ref, radius=None):
     """Memory-light autobuild: cut local boxes from the sparse maps about the event
     centroid (no full-cell unmask), fit + score (CNN/BDC/signal) entirely in
     that local box, then map the pose back to the native frame.
     Mirrors autobuild_conformer's outputs; result is frame-invariant since all
     scores are translation-invariant."""
+    # Half-width of the Cartesian cube the sub-block must cover. Tunable
+    # (PANDDA_LOCAL_RADIUS) so the block can be grown to test whether a
+    # difference from the full-cell path is an edge effect.
+    if radius is None:
+        radius = float(os.environ.get("PANDDA_LOCAL_RADIUS", 24.0))
     normalize_z = (z_array - np.mean(z_array)) / np.std(z_array)
     normalize_xmap = (masked_dtag_array - np.mean(masked_dtag_array)) / np.std(masked_dtag_array)
     # The fit's score-grid target (same construction as the full path), built
