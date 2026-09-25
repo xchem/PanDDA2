@@ -28,7 +28,8 @@ dependencies = [
 #    "dask-jobqueue",
     "gdown",
     "torch==1.13.1",
-    "pytorch-lightning",
+    'lightning',
+    'pytorch-lightning',    
     'scikit-image',
     'gemmi',
     'edanalyzer@git+https://github.com/ConorFWild/edanalyzer.git'
