@@ -9,7 +9,13 @@ import pandas as pd
 
 from pandda_gemmi.interfaces import *
 from pandda_gemmi import serialize
-from pandda_gemmi.cnn import load_model_from_checkpoint, EventScorer, LitEventScoring, BuildScorer, LitBuildScoring
+from edanalyzer.models.event_scoring import LitEventScoring
+from pandda_gemmi.cnn import (
+    load_model_from_checkpoint, 
+    EventScorer, 
+    BuildScorer, 
+    LitBuildScoring,
+    )
 
 
 def get_scoring_models(args, ):
