@@ -66,6 +66,9 @@ def postrun(
                 dtag=site_info['dtag'],
                 residues=[(chain, res) for (chain, res) in site_info['residues']]
                 )
+            if len(set(existing_sites[site_idx].residues)) == len(existing_sites[site_idx].residues):  # Makse sure no duplicates
+                raise Exception(f'Forced Site {site_idx} has duplicate residues in file {args.site_override_file}! Remove these to proceed!')
+
             site_overrides = {_site_idx: _site for _site_idx, _site in existing_sites.items()}
     else:
         site_overrides = None
