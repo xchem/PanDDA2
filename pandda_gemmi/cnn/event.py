@@ -170,6 +170,9 @@ class EventScorer:
             )[np.newaxis,:]
 
         return self.model(
+            None,
             torch.from_numpy(map_array),
-            torch.from_numpy(mol_array)
+            torch.from_numpy(mol_array),
+            None
+
         ).detach().numpy()[0][2], map_array, mol_array
