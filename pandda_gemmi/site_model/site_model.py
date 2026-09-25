@@ -1447,7 +1447,10 @@ class ResiduePainting:
                     # Otherwise create a new alignment class and add it
                 if matched:
                     if site_override is not None:
-                        if dtag in [site.dtag for site_id, site in site_override.items()]:
+                        # site_override is None unless --site_override_file was
+                        # given; the identical expression is already guarded
+                        # where it is used earlier in this method.
+                        if site_override and dtag in [site.dtag for site_id, site in site_override.items()]:
                             raise Exception(f'The forced alignment for dataset {dtag} can be aligned to other forced alignment {ref_dtag}. Change {dtag} to {ref_dtag} in the forced site definition.')
                     alignments[(ref_dtag, ref_chain)][(dtag, chain.name)] = insertion_mapping
 
@@ -1643,6 +1646,11 @@ class ResiduePainting:
 
             ref_unified_indexes = []
             for chain, res in ref_event_env:
+                # Non-protein chains (ligands, hetatms) are skipped by
+                # get_alignments, so they have no chain class and the
+                # residue guard below cannot be reached for them.
+                if (ref_dtag, chain) not in dtag_chain_to_chain_class:
+                    continue
                 ref_chain_class = dtag_chain_to_chain_class[(ref_dtag, chain)]
                 alignment = msa[ref_chain_class][(ref_dtag, chain)]
 
@@ -1741,6 +1749,11 @@ class ResiduePainting:
             # Get environment after alignment
             ref_unified_indexes = []
             for chain, res in ref_event_env:
+                # Non-protein chains (ligands, hetatms) are skipped by
+                # get_alignments, so they have no chain class and the
+                # residue guard below cannot be reached for them.
+                if (ref_event_id[0], chain) not in dtag_chain_to_chain_class:
+                    continue
                 ref_chain_class = dtag_chain_to_chain_class[(ref_event_id[0], chain)]
                 alignment = msa[ref_chain_class][(ref_event_id[0], chain)]
 
