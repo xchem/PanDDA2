@@ -40,6 +40,7 @@ def get_scoring_models(args, ):
 
         with open(event_config_path, 'r') as f:
             event_model_config = yaml.safe_load(f)
+        print(f'Getting event scoring model from: {event_model_path}')
         score_event_model = load_model_from_checkpoint(
             event_model_path,
             LitEventScoring(None, event_model_config),
@@ -88,6 +89,7 @@ def get_scoring_models(args, ):
 
         with open(event_config_path, 'r') as f:
             event_model_config = yaml.safe_load(f)
+        print(f'Getting event scoring model from: {event_model_path}')
         score_event_model = load_model_from_checkpoint(
             event_model_path,
             LitEventScoring(None, event_model_config),
