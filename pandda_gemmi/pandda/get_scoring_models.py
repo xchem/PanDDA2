@@ -42,7 +42,7 @@ def get_scoring_models(args, ):
             event_model_config = yaml.safe_load(f)
         score_event_model = load_model_from_checkpoint(
             event_model_path,
-            LitEventScoring(event_model_config),
+            LitEventScoring(None, event_model_config),
         ).float().eval()
         score_event = EventScorer(score_event_model, event_model_config, debug=args.debug)
 
@@ -90,7 +90,7 @@ def get_scoring_models(args, ):
             event_model_config = yaml.safe_load(f)
         score_event_model = load_model_from_checkpoint(
             event_model_path,
-            LitEventScoring(event_model_config),
+            LitEventScoring(None, event_model_config),
         ).float().eval()
         score_event = EventScorer(score_event_model, event_model_config, debug=args.debug)
         event_score_quantiles = pd.read_csv(event_score_quantiles_path)
