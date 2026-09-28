@@ -48,8 +48,18 @@ class RankHighEventScoreBySite:
             ):
                 sorted_sites[j+1] = site
         else:
-            sorted_sites = sites
+            for _site_id in existing_sites:
+                sorted_sites[_site_id] = sites[_site_id]
 
+            for j, site in enumerate(
+
+                sorted(
+                    [_site for _site_id, _site in sites if _site_id not in sorted_sites], 
+                    key=lambda _site: max([get_event_score(events[_event_id]) for _event_id in _site.event_ids]),  # Max is safe: no event should have zero events 
+                    reverse=True
+                ),
+            ):
+                sorted_sites[j+1] = site
         # Sort event ids within each site by best score
         sorted_event_ids = []
         for _site_id in sorted(sorted_sites):

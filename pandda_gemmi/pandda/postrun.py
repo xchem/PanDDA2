@@ -174,7 +174,7 @@ def postrun(
         sites,
         autobuilds,
         RankHighEventScoreBySite(),
-        existing_events
+        existing_sites
     )
 
     # Probabilities
