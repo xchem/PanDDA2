@@ -1643,7 +1643,12 @@ class ResiduePainting:
 
             ref_unified_indexes = []
             for chain, res in ref_event_env:
-                ref_chain_class = dtag_chain_to_chain_class[(ref_dtag, chain)]
+                try:
+                    ref_chain_class = dtag_chain_to_chain_class[(ref_dtag, chain)]
+                except:
+                    for (_mov_dtag, _mov_chain), (_ref_dtag, _ref_chain) in dtag_chain_to_chain_class.items():
+                        print(f'{_mov_dtag}:{_mov_chain} - {_ref_dtag}:{_ref_chain}')
+                    raise Exception()
                 alignment = msa[ref_chain_class][(ref_dtag, chain)]
 
                 if res not in alignment:  # Skip het atoms with no alignment  
