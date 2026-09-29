@@ -1646,6 +1646,7 @@ class ResiduePainting:
                 try:
                     ref_chain_class = dtag_chain_to_chain_class[(ref_dtag, chain)]
                 except:
+                    print(f'# Dtag/chain to chain class mapping')
                     for (_mov_dtag, _mov_chain), (_ref_dtag, _ref_chain) in dtag_chain_to_chain_class.items():
                         print(f'{_mov_dtag}:{_mov_chain} - {_ref_dtag}:{_ref_chain}')
                     raise Exception()
