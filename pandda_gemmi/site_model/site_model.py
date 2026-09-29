@@ -1298,7 +1298,7 @@ class ResiduePainting:
         # Get the environments for each event
         event_evenvironments = {}
         for dtag, dataset in datasets.items():
-            st_arr = StructureArray.from_structure(dataset.structure, waters=False)
+            st_arr = StructureArray.from_structure(dataset.structure, protein_only=True)
             ns = spatial.KDTree(st_arr.positions)
             dtag_events = {event_id: event for event_id, event in events.items() if event_id[0] == dtag}
 
@@ -1410,14 +1410,21 @@ class ResiduePainting:
     def get_alignments(self, datasets: Dict[str, DatasetInterface], existing_alignments, site_override):
         # Iterate over chains in datasets, creating alignment classes for acceptably good alignments as necessary
         alignments = {}
+
+        # Add existing alignments from previous runs
         if existing_alignments is not None:
             alignments.update(existing_alignments)
         aligned_datasets = set([x[0] for x in alignments] + [x for y in alignments for x in alignments[y]])
+
+
         dtags_to_align = []
+
+        # Ensure overide sites are used as references first if present
         if site_override:
             dtags_to_align += [site.dtag for site_id, site in site_override.items()]
         dtags_to_align += [x for x in sorted(datasets, key = lambda _dtag: datasets[_dtag].reflections.resolution()) if x not in dtags_to_align]
 
+        # 
         for dtag in dtags_to_align:
             if dtag in aligned_datasets:
                 print(f'Already have alignments for {dtag}')
@@ -1425,6 +1432,7 @@ class ResiduePainting:
             for chain in datasets[dtag].structure.structure[0]:
                 # If chain is non protein, skip
                 if not self.chain_is_protein(chain):
+                    print(f'\t\t{dtag}:{chain.name} is not protein! Skipping alignment!')
                     continue
 
                 # Get the seqeunce
@@ -1436,6 +1444,7 @@ class ResiduePainting:
                     ref_seq, ref_insertions = self.chain_to_seq(datasets[ref_dtag].structure.structure[0][ref_chain])
                     insertion_mapping, score = self.get_insertion_mapping(ref_seq, ref_insertions, sequence, insertions)
 
+                    # Assert aligns well to self (should always be true if valid alignment)
                     if (ref_dtag, ref_chain) == (dtag, chain.name):
                         assert score > 0.8
 

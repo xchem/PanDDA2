@@ -3,6 +3,7 @@ import dataclasses
 import gemmi
 import numpy as np
 
+from pandda_gemmi import constants 
 from ..interfaces import *
 
 
@@ -151,7 +152,7 @@ class StructureArray(StructureArrayInterface):
         self.positions = np.array(positions)
 
     @classmethod
-    def from_structure(cls, structure, waters=True):
+    def from_structure(cls, structure, waters=True, protein_only=False):
         models = []
         chains = []
         seq_ids = []
@@ -161,6 +162,9 @@ class StructureArray(StructureArrayInterface):
         for model in structure.structure:
             for chain in model:
                 for residue in chain.first_conformer():
+                    if protein_only:
+                        if residue.name not in constants.RESIDUE_NAMES:
+                            continue
                     if not waters:
                         if residue.name == 'HOH':
                             continue
