@@ -33,7 +33,7 @@ dependencies = [
     'scikit-image',
     'gemmi',
     'zenodo-get',
-    'setuptools==39.1.0'
+    'setuptools==39.1.0',
     'edanalyzer@git+https://github.com/ConorFWild/edanalyzer.git'
 #    "gemmi@git+https://github.com/ConorFWild/gemmi.git#egg=flexible_interpolation"
 ] # Add project dependencies here, e.g. ["click", "numpy"]

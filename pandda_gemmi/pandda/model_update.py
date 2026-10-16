@@ -56,7 +56,6 @@ def update_models():
                 model_config = yaml.safe_load(f)
             if model_config['version'] != version:
                 print(f'Model version mismatch: {model_type} - code - {version} vs file - {model_config["version"]}! Downloading new model!')
-
                 do_update = True
 
         if do_update:
