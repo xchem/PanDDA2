@@ -1397,7 +1397,7 @@ def autobuild_conformer(
             #     res,
             # )
             'local_signal': float(corr),
-            'new_bdc': float(bdc),
+            'new_bdc': float(bdc.flatten()[0]),
             # 'new_bdc': float(event_bdc),
             # 'noise': float(noise_signal),
             # 'signal': float(signal),
