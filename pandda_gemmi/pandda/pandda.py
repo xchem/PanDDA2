@@ -38,11 +38,12 @@ def pandda(args: PanDDAArgs):
     processor: ProcessorInterface = ProcessLocalRay(args.local_cpus)
     console.print_initialized_local_processor(args)
 
-    fs, datasets, datasets_to_process = prerun(args, console, processor)
-
     # Get the event and build scores
     score_event, score_build, event_model_config, event_score_quantiles = get_scoring_models(args)
     score_build_ref = processor.put(score_build)
+
+    # Prerun
+    fs, datasets, datasets_to_process = prerun(args, console, processor)
 
     # Get the method for processing the statistical models
     process_model = ProcessModel(minimum_event_score=event_model_config['minimum_event_score'],

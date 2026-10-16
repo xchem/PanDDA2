@@ -496,7 +496,7 @@ RHOFIT_MODEL_REGEX = "Hit_*.pdb"
 RHOFIT_LOG_FILE = "rhofit.lis"
 RHOFIT_CORR_FILE = "Hit_corr.log"
 # RHOFIT_LOG_REGEX = "(Hit[_0-9]+[(.)]pdb)[\s]+([a-zA-Z]+)[\s]+([0-9\.\+\-]+)[\s]+([0-9\.\+\-]+)"
-RHOFIT_LOG_REGEX = "(Hit[_0-9]+[(.)]pdb)[\s]+([0-9\.\+\-]+)"
+RHOFIT_LOG_REGEX = r"(Hit[_0-9]+[(.)]pdb)[\s]+([0-9\.\+\-]+)"
 RHOFIT_REFINE_MTZ = "refine.mtz"
 RHOFIT_OUTPUT_DIR = "rhofit"
 
