@@ -119,7 +119,7 @@ def postrun(
         if existing_sites is not None:
             site_id_to_residues = {v: [_k for _k in residue_assignments if residue_assignments[_k] == v] for k, v in residue_assignments.items()}
 
-            for site_id, site in sites.items():
+            for site_id, site in existing_sites.items():
                 site.dtag = site_id_to_residues[site_id][0][0]
                 site.residues = [(x[1], x[2]) for x in site_id_to_residues[site_id]]
     else:
