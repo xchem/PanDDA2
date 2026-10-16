@@ -685,9 +685,9 @@ def score_conformer(
     best_score_fit_score = scores[best_score_index]
     best_optimised_structure = optimised_structures[best_score_index]
 
-    print(best_score_fit_score)
+    # print(best_score_fit_score)
 
-    return best_optimised_structure, float(-best_score_fit_score), get_structure_mean(best_optimised_structure), arr
+    return best_optimised_structure, float(-best_score_fit_score.flatten()[0]), get_structure_mean(best_optimised_structure), arr
 
 
 def get_score_grid(dmap, st, event: EventInterface):
