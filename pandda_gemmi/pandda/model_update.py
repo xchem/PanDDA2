@@ -26,10 +26,10 @@ def update_models():
                 ]
                   },
         "event_no_ligand": {
-            "path": Path(os.path.dirname(inspect.getfile(LitEventScoring))) / "event_score_no_ligand_config.yaml", 
+            "path": Path(os.path.dirname(inspect.getfile(LitEventScoring))) / "model_event_no_ligand_config.yaml", 
             "version": constants.EVENT_MODEL_NO_LIGAND_VERSION,
             "files": [
-                "event_score_no_ligand_config.yaml", 
+                "model_event_no_ligand_config.yaml", 
                 "event_score_no_ligand_quantiles.csv", 
                 "model_event_no_ligand.ckpt",
                 ]
