@@ -685,6 +685,8 @@ def score_conformer(
     best_score_fit_score = scores[best_score_index]
     best_optimised_structure = optimised_structures[best_score_index]
 
+    print(best_score_fit_score)
+
     return best_optimised_structure, float(-best_score_fit_score), get_structure_mean(best_optimised_structure), arr
 
 
