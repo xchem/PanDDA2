@@ -5,7 +5,7 @@ VERSION = "0.1.0"
 EVENT_MODEL_VERSION = 2
 EVENT_MODEL_NO_LIGAND_VERSION = 1
 BUILD_MODEL_VERSION = 1
-MODEL_ZENODO_DOI = "20540521"
+MODEL_ZENODO_DOI = "19112448"
 
 ###################################################################
 # # Test Info
