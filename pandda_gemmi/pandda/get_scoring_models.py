@@ -16,9 +16,12 @@ from pandda_gemmi.cnn import (
     BuildScorer, 
     LitBuildScoring,
     )
+from pandda_gemmi.pandda.model_update import update_models
 
 
 def get_scoring_models(args, ):
+    update_models()
+
     # Get the method for scoring events
     if args.use_ligand_data:
         event_model_path = Path(os.path.dirname(inspect.getfile(LitEventScoring))) / "model_event.ckpt"
