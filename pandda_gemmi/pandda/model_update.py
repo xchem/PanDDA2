@@ -12,6 +12,7 @@ from edanalyzer.models.event_scoring import LitEventScoring
 
 def update_models():
     # Get model version from constants
+    print(Path(os.path.dirname(inspect.getfile(LitEventScoring))) / "model_event_config.yaml")
 
     # Get model version from files
     configs = {
