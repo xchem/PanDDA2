@@ -267,6 +267,7 @@ def process_dataset(
         )
     except Exception as e:
         print('UMAP Failed. This is probably due to numba versioning.')
+        print(e)
         plot_aligned_density_projection(
             dmaps,
             models_to_process,

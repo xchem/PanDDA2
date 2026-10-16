@@ -26,7 +26,7 @@ def plot_aligned_density_projection(
         plt.scatter(
             embedding[:, 0],
             embedding[:, 1],
-            c=[sns.color_palette()[x] for x in characterization_set_masks[model_number]],
+            c=[sns.color_palette()[int(x)] for x in characterization_set_masks[model_number]],
             # s=mpl.rcParams['lines.markersize']*2
         )
         plt.gca().set_aspect('equal', 'datalim')
