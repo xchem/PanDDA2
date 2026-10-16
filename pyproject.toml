@@ -11,7 +11,7 @@ classifiers = [
 ]
 description = "Tools to generate data suitable for loading into Fragalysis"
 dependencies = [
-    "numpy<2.0",
+    "numpy",
     "scipy",
     "joblib",
     "scikit-learn",
@@ -27,13 +27,13 @@ dependencies = [
 #    "dask",
 #    "dask-jobqueue",
     "gdown",
-    "torch==1.13.1",
+    "torch",
     'lightning',
     'pytorch-lightning',    
     'scikit-image',
     'gemmi',
     'zenodo-get',
-    'setuptools==39.1.0',
+    'setuptools',
     'edanalyzer@git+https://github.com/ConorFWild/edanalyzer.git'
 #    "gemmi@git+https://github.com/ConorFWild/gemmi.git#egg=flexible_interpolation"
 ] # Add project dependencies here, e.g. ["click", "numpy"]
