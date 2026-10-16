@@ -63,7 +63,7 @@ def update_models():
             out_dir = Path(os.path.dirname(inspect.getfile(LitEventScoring)))
             for file in files:
                 if (out_dir / file).exists():
-                    os.remove(file)
+                    os.remove(out_dir / file)
             download(
                 record_or_doi=constants.MODEL_ZENODO_DOI,
                 output_dir=out_dir,
