@@ -1455,9 +1455,14 @@ class ResiduePainting:
 
                     # Otherwise create a new alignment class and add it
                 if matched:
-                    if site_override is not None:
-                        if dtag in [site.dtag for site_id, site in site_override.items()]:
-                            raise Exception(f'The forced alignment for dataset {dtag} can be aligned to other forced alignment {ref_dtag}. Change {dtag} to {ref_dtag} in the forced site definition.')
+                    # Not sure this exception makes sense? Why would (forced site reference dtag) + (other dataset alignable) be an issue? 
+                    # Commenting out!
+                    # if site_override is not None:
+                        # if dtag in [site.dtag for site_id, site in site_override.items()]:
+                        #     raise Exception(
+                        #         f'The forced alignment for dataset {dtag} can be aligned to other forced alignment {ref_dtag}.'
+                        #         f'Change {dtag} to {ref_dtag} in the forced site definition.'
+                        #         )
                     alignments[(ref_dtag, ref_chain)][(dtag, chain.name)] = insertion_mapping
 
                 else:
