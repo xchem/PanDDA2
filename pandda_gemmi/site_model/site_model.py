@@ -2169,6 +2169,7 @@ class ResiduePaintingByLeader:
         sites = {}
 
         # Allocate the residues of existing sites 
+        rprint(f'Site Finding: Allocating existing site residues')
         if existing_sites is not None:
             for site_id, site in existing_sites.items():
                 for residue in site.residues:
@@ -2179,9 +2180,11 @@ class ResiduePaintingByLeader:
                 sites[site_id] = site
 
         # Allocate events of existing sites
+        rprint(f'Site Finding: Allocating existing events')
         allocated_events = [_event_id for _site_id in sites for _event_id in sites[_site_id].event_ids]
 
         # Allocate forced sites - error if inconsistent with previous
+        rprint(f'Site Finding: Creating manually defined sites')
         if site_overrides:
             for site_id, site in site_overrides.items():
                 # See if the override is already present 
@@ -2206,6 +2209,7 @@ class ResiduePaintingByLeader:
                 dtag_chain_to_chain_class[(aligned_dtag, aligned_chain)] = (alignment_dtag, alignment_chain,)
 
         # Iterate from highest scoring event to lowest, creating residue zones from envs
+        rprint(f'Site Finding: Creating sites from event environments')
         site_idx = len(sites) + 1
         for event_id in sorted(events, key=lambda _event_id: events[_event_id].score, reverse=True):
             # Get the encironment for the event
@@ -2238,6 +2242,7 @@ class ResiduePaintingByLeader:
                 site_idx += 1
 
         # Allocate events to site with most overlaps, breaking ties by lower event number
+        rprint(f'Site Finding: Allocating events to sites with best overlap')
         for ref_event_id, ref_event_env in event_environments.items():
             # Get environment after alignment
             ref_unified_indexes = []
