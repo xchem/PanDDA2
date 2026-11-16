@@ -1648,8 +1648,11 @@ class ResiduePainting:
         # rprint(dtag_chain_to_chain_class)
 
         correlations = {}
+        moving_cutoff = min(event_cutoff, max([event.score for event in events.items()]))
+        if moving_cutoff != event_cutoff:
+            rprint(f'No high confidence events! Using only highest confidence event with score: {round(moving_cutoff, 2)}')
         for ref_event_id, ref_event_env in event_environments.items():
-            if events[ref_event_id].score < event_cutoff:
+            if events[ref_event_id].score < moving_cutoff:
                 rprint(f'Skipping low conf event with score {round(events[ref_event_id].score, 2)}')
                 continue
 
