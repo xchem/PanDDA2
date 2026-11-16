@@ -12,7 +12,7 @@ except ImportError:
 
 from pandda_gemmi.interfaces import *
 from pandda_gemmi import constants
-from pandda_gemmi.site_model import HeirarchicalSiteModel, HeirarchicalSiteModelAlignedSequences, ResiduePainting, Site, get_sites
+from pandda_gemmi.site_model import HeirarchicalSiteModel, HeirarchicalSiteModelAlignedSequences, ResiduePaintingByLeader, Site, get_sites
 from pandda_gemmi.autobuild.merge import merge_autobuilds, MergeHighestBuildScore, MergeHighestEventScore
 from pandda_gemmi.ranking import rank_events, RankHighEventScoreBySite
 from pandda_gemmi.tables import output_tables
@@ -44,7 +44,7 @@ def postrun(
 
     if (not inspect_table_file.exists()) or (msa_file.exists()):
         print(f'New PanDDA or existing msa - using site model: Residue Painting')
-        site_model = ResiduePainting(
+        site_model = ResiduePaintingByLeader(
                 t=0.3, 
                 debug=args.debug,
                 distance=10.0

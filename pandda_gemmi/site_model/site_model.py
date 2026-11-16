@@ -1796,3 +1796,480 @@ class ResiduePainting:
                         residue_allocations[_resid] = new_site_num
 
         return sites, residue_allocations, msa
+
+
+class ResiduePaintingByLeader:
+
+    def __init__(self, t=0.3, debug=False, distance=8.0):
+        self.t = t
+        self.debug = debug
+        self.distance = distance
+
+    def get_event_environment(
+            self,
+            query_pos_array,
+            structure_array,
+            ns,
+            distance = 5.0
+    ):
+        indexess = ns.query_ball_point(
+            query_pos_array,
+            distance,
+        )
+        res_ids = {}
+
+        index_list = []
+        if isinstance(indexess, list):
+            index_list = indexess
+        else:
+            for x in indexess:
+                for y in x:
+                    index_list.append(y)
+            # index_list = [x for x in set(index_list)]  # Deduplicate
+
+        for index in index_list:
+            chain = structure_array.chains[index]
+            assert len(chain) == 1
+            residue = structure_array.seq_ids[index]
+
+
+            # for chain, res in zip(chains, residues):
+            res_ids[(str(chain), str(residue))] = True
+
+        return [res_id for res_id in res_ids.keys()]
+
+
+    def get_event_environments(self, datasets, events, distance=5.0):
+        # Get the environments for each event
+        event_evenvironments = {}
+        for dtag, dataset in datasets.items():
+            st_arr = StructureArray.from_structure(dataset.structure, protein_only=True)
+            ns = spatial.KDTree(st_arr.positions)
+            dtag_events = {event_id: event for event_id, event in events.items() if event_id[0] == dtag}
+
+
+            for event_id, event in dtag_events.items():
+                event_evenvironments[event_id] = self.get_event_environment(
+                    event.pos_array,
+                    st_arr,
+                    ns,
+                    distance=distance,
+                )
+
+        return event_evenvironments
+
+    def get_centroids(self, event_environments, reference_dataset):
+        centroids = {}
+        for event_id, environment in event_environments.items():
+            # res_ids = set([res_id for _event_id in clique for res_id in event_environments[_event_id]])
+            poss = [
+                [atom.pos.x, atom.pos.y, atom.pos.z]
+                for model in reference_dataset.structure.structure
+                for chain in model
+                for res in chain
+                for atom in res
+                if (chain.name, str(res.seqid.num)) in environment
+            ]
+            if len(poss) == 0:
+                centroid = [0.0,0.0,0.0]
+            else:
+                centroid = np.mean(
+                    np.array(poss),
+                    axis=0
+                )
+            centroids[event_id] = centroid
+
+        return centroids
+    
+    def get_insertion_mapping(self, ref_seq, ref_insertions, sequence, insertions):
+        # Get the alignment
+        alignment = gemmi.align_string_sequences(
+            ref_seq,
+            sequence,
+            [],
+            gemmi.AlignmentScoring('b'),
+        )
+
+        # Get the gap strings
+        formatted_match = alignment.formatted(
+            ''.join(ref_seq),
+            ''.join(sequence),
+        )
+        aligned_ref, match_string, aligned_mov = formatted_match.splitlines()
+
+        # Get native index to aligned index for the ref seq
+        count = 0
+        ref_to_aligned = {}
+        for j, item in enumerate(aligned_ref):
+            if item not in ['-', ' ']:
+                ref_to_aligned[count] = j
+                count += 1
+
+        # Get the aligned index to native index for the mov seq
+        mov_seq_index_to_key = {_j: _key for _j, _key in enumerate(insertions)}
+        aligned_to_mov = {}
+        count = 0
+        for aligned_index, item in enumerate(aligned_mov):
+            if item not in ['-', ' ']:
+                aligned_to_mov[aligned_index] = mov_seq_index_to_key[count]
+                count += 1
+
+        # Generate the residue mapping
+        residue_mapping = {}
+
+        for ref_seqid_index, ref_seqid in enumerate(ref_insertions):
+            # Get the alignment space index
+            alignment_index = ref_to_aligned[ref_seqid_index]
+
+            # Get the corresponding mov res at that alignment index
+            mov_seq_res = aligned_mov[alignment_index]
+
+            # Only consider matched residues
+            if mov_seq_res != '-':
+                # Get the mov seq index
+                mov_seqid = aligned_to_mov[alignment_index]
+
+                # Update the residue mapping
+                residue_mapping[ref_seqid] = mov_seqid
+
+
+        return residue_mapping, len(residue_mapping) / len(ref_insertions)
+
+    def get_env_unified_indexes(self, event_id, event_env, dtag_chain_to_chain_class, msa):
+
+        ref_dtag = event_id[0]
+
+        ref_unified_indexes = []
+        for chain, res in event_env:
+            try:
+                ref_chain_class = dtag_chain_to_chain_class[(ref_dtag, chain)]
+            except:
+                print(f'# Dtag/chain to chain class mapping')
+                for (_mov_dtag, _mov_chain), (_ref_dtag, _ref_chain) in dtag_chain_to_chain_class.items():
+                    print(f'{_mov_dtag}:{_mov_chain} - {_ref_dtag}:{_ref_chain}')
+                raise Exception()
+            alignment = msa[ref_chain_class][(ref_dtag, chain)]
+
+            if res not in alignment:  # Skip het atoms with no alignment  
+                continue
+            aligned_index = alignment[res]
+            ref_unified_indexes.append((ref_chain_class[0], ref_chain_class[1], aligned_index))
+
+        return ref_unified_indexes
+
+    def chain_to_seq(self, chain):
+        seq = []
+        insertion = []
+        for res in chain:
+            if is_protein_residue(res):
+                seq.append(gemmi.one_letter_code([res.name]))
+                insertion.append(str(res.seqid.num))
+
+        return seq, insertion
+
+    def chain_is_protein(self, chain):
+        if any([is_protein_residue(res) for res in chain]):
+            return True
+        else:
+            return False
+
+    def get_alignments(self, datasets: Dict[str, DatasetInterface], existing_alignments, site_override):
+        # Iterate over chains in datasets, creating alignment classes for acceptably good alignments as necessary
+        alignments = {}
+
+        # Add existing alignments from previous runs
+        if existing_alignments is not None:
+            alignments.update(existing_alignments)
+        aligned_datasets = set([x[0] for x in alignments] + [x for y in alignments for x in alignments[y]])
+
+
+        dtags_to_align = []
+
+        # Ensure overide sites are used as references first if present
+        if site_override:
+            dtags_to_align += [site.dtag for site_id, site in site_override.items()]
+        dtags_to_align += [x for x in sorted(datasets, key = lambda _dtag: datasets[_dtag].reflections.resolution()) if x not in dtags_to_align]
+
+        # 
+        for dtag in dtags_to_align:
+            if dtag in aligned_datasets:
+                print(f'Already have alignments for {dtag}')
+                continue
+            for chain in datasets[dtag].structure.structure[0]:
+                # If chain is non protein, skip
+                if not self.chain_is_protein(chain):
+                    print(f'\t\t{dtag}:{chain.name} is not protein! Skipping alignment!')
+                    continue
+
+                # Get the seqeunce
+                sequence, insertions = self.chain_to_seq(chain)
+                    
+                # Iterate over alignment references, getting alignments
+                matched = False
+                for ref_dtag, ref_chain in alignments:
+                    ref_seq, ref_insertions = self.chain_to_seq(datasets[ref_dtag].structure.structure[0][ref_chain])
+                    insertion_mapping, score = self.get_insertion_mapping(ref_seq, ref_insertions, sequence, insertions)
+
+                    # Assert aligns well to self (should always be true if valid alignment)
+                    if (ref_dtag, ref_chain) == (dtag, chain.name):
+                        assert score > 0.8
+
+                    # If the alignment is "good", add to class
+                    if score > 0.8:
+                        matched = True
+                        break
+
+                    # Otherwise create a new alignment class and add it
+                if matched:
+                    # Not sure this exception makes sense? Why would (forced site reference dtag) + (other dataset alignable) be an issue? 
+                    # Commenting out!
+                    # if site_override is not None:
+                        # if dtag in [site.dtag for site_id, site in site_override.items()]:
+                        #     raise Exception(
+                        #         f'The forced alignment for dataset {dtag} can be aligned to other forced alignment {ref_dtag}.'
+                        #         f'Change {dtag} to {ref_dtag} in the forced site definition.'
+                        #         )
+                    alignments[(ref_dtag, ref_chain)][(dtag, chain.name)] = insertion_mapping
+
+                else:
+
+                    alignments[(dtag, chain.name)] = {(dtag, chain.name): self.get_insertion_mapping(sequence, insertions, sequence, insertions)[0]}
+                
+        return alignments
+    
+    def get_event_distance(self, ref_event_env, mov_event_env, msa, ref_dtag, mov_dtag):    
+        # Get the msa classes for each dtag's chains
+        ref_chain_classes = {}
+        mov_chain_classes = {}
+        for (alignment_dtag, alignment_chain), alignments in msa.items():
+            for (aligned_dtag, aligned_chain), alignment in alignments.items():
+                if aligned_dtag == ref_dtag:
+                    ref_chain_classes[aligned_chain] = (alignment_dtag, alignment_chain)
+                if aligned_dtag == mov_dtag:
+                    mov_chain_classes[aligned_chain] = (alignment_dtag, alignment_chain)
+
+        # Map residues between the environments
+        try:
+            ref_aligned_resids = []
+            for chain, res in ref_event_env:
+                if chain not in ref_chain_classes:
+                    continue
+                chain_class = ref_chain_classes[chain]
+                alignment = msa[chain_class][(ref_dtag, chain)]
+                if res not in alignment:  # Skip het atoms with no alignment  
+                    continue
+                aligned_index = alignment[res]
+                ref_aligned_resids.append((chain_class[1], aligned_index))
+            ref_aligned_resids_set = set(ref_aligned_resids)
+        except:
+            rprint('mov res and alignment')
+            rprint(res)
+            rprint(alignment)
+            raise Exception
+        
+        mov_aligned_resids = []
+        try:
+            for chain, res in mov_event_env:
+                if chain not in mov_chain_classes:
+                    continue
+                chain_class = mov_chain_classes[chain]
+                alignment = msa[chain_class][(mov_dtag, chain)]
+                if res not in alignment:  # Skip het atoms with no alignment  
+                    continue
+                aligned_index = alignment[res]
+                mov_aligned_resids.append((chain_class[1], aligned_index))
+        except:
+            rprint('mov res and alignment')
+            rprint(res)
+            rprint(alignment)
+            raise Exception
+        mov_aligned_resids_set = set(mov_aligned_resids)
+
+        union = mov_aligned_resids_set.union(ref_aligned_resids_set)
+        intersection = mov_aligned_resids_set.intersection(ref_aligned_resids_set)
+
+        if len(intersection) == 0:
+            return 1.0
+        elif len(intersection) == len(union):
+            return 0.0
+        else:
+            return 1/len(intersection)
+
+    def get_event_distances(self, event_environments, msa):
+        correlations = {}
+        for ref_event_id, ref_event_env in event_environments.items():
+            correlations[ref_event_id] = {}
+            for mov_event_id, mov_event_env in event_environments.items():
+                ref_dtag, mov_dtag = ref_event_id[0], mov_event_id[0]
+                correlations[ref_event_id][mov_event_id] = self.get_event_distance(
+                    ref_event_env, 
+                    mov_event_env, 
+                    msa, 
+                    ref_dtag, 
+                    mov_dtag,
+                    )
+
+        return correlations
+        ...
+
+
+    def get_event_distances_to_site(self, msa, event_environments, allocated_events, residues, dtag):
+        dists = {}
+        for event_id, event_env in event_environments.items():
+            if event_id in allocated_events:
+                continue
+            # Get the distance to the site
+            dist = self.get_event_distance(
+                [(x[0], x[1]) for x in residues], 
+                event_env, 
+                msa, 
+                dtag, 
+                event_id[0],
+                )
+            dists[event_id] = dist
+
+        return dists
+
+        ...
+
+    def __call__(self,
+                 datasets: Dict[str, DatasetInterface],
+                 events: Dict[Tuple[str, int], EventInterface],
+                 ref_dataset,
+                 existing_events,
+                 existing_sites,
+                 site_overrides,
+                 existing_alignments,
+                 event_cutoff=0.85
+                 ):
+
+        # Handle edge cases
+        if len(events) == 0:
+            return {}
+
+        if len(events) == 1:
+            return {0: Site(
+                list(events.keys()),
+                np.mean(list(events.values())[0].pos_array, axis=0)
+            )}
+        
+        # Get the sequence alignments
+        rprint(f'Site Finding: Getting Multiple Sequence Alignments...')
+        msa = self.get_alignments(datasets, existing_alignments, site_overrides)
+
+        # Find the residue environment of each event (chain and residue number)
+        rprint(f'Site Finding: Getting event enironments')
+        event_environments: Dict[Tuple[str, int], List[Tuple[str, str]]] = self.get_event_environments(
+            datasets, 
+            events, 
+            distance=self.distance,
+            )
+
+        residue_allocations = {}
+        sites = {}
+
+        # Allocate the residues of existing sites 
+        if existing_sites is not None:
+            for site_id, site in existing_sites.items():
+                for residue in site.residues:
+                    if (site.dtag, residue[0], residue[1]) not in residue_allocations:
+                        residue_allocations[(site.dtag, residue[0], residue[1])] = site_id
+                    else:
+                        raise Exception(f'A residue is present in two existing sites! Error!')
+                sites[site_id] = site
+
+        # Allocate events of existing sites
+        allocated_events = [_event_id for _site_id in sites for _event_id in sites[_site_id].event_ids]
+
+        # Allocate forced sites - error if inconsistent with previous
+        if site_overrides:
+            for site_id, site in site_overrides.items():
+                # See if the override is already present 
+                if any([len(set(site.residues).difference(_ref_site.residues)) == 0 for _ref_site in sites.values()]):
+                    print(f'Forced site already exists in existing sites!')
+                    continue
+
+                # Otherwise see if its residues can be allocated
+                for residue in site.residues:
+                    if (site.dtag, residue[0], residue[1]) not in residue_allocations:
+                        residue_allocations[(site.dtag, residue[0], residue[1])] = site_id
+                    else:
+                        raise Exception(f'A residue is present in two existing sites! Error!')
+                sites[len(sites)+1] = site
+
+        # Get sites defined by high confidence events 
+
+        # Get distances between residues based on high confidence events
+        dtag_chain_to_chain_class = {}
+        for (alignment_dtag, alignment_chain), alignments in msa.items():
+            for (aligned_dtag, aligned_chain), alignment in alignments.items():
+                dtag_chain_to_chain_class[(aligned_dtag, aligned_chain)] = (alignment_dtag, alignment_chain,)
+
+        # Iterate from highest scoring event to lowest, creating residue zones from envs
+        site_idx = len(sites) + 1
+        for event_id in sorted(events, key=lambda _event_id: events[_event_id].score, reverse=True):
+            # Get the encironment for the event
+            event_env = event_environments[event_id]
+
+            # Get the unfied resids for this environment
+            env_res_unified_indexes = self.get_env_unified_indexes(
+                event_id, 
+                event_env, 
+                dtag_chain_to_chain_class, 
+                msa,
+                )
+
+            # Check if any of these ids have already been used
+            if any([(idx in residue_allocations) for idx in env_res_unified_indexes]):
+                # If so, this event belongs to an already assigned site and will be assigned to it
+                continue
+            else:
+                # If not, Assign these resides to a new site and increment the site number
+                for idx in env_res_unified_indexes:
+                    residue_allocations[idx] = site_idx
+                    sites[site_idx] = Site(
+                        [], 
+                        np.zeros(3), 
+                        dtag=site_resids[0][0], 
+                        residues=[(_resid[1], _resid[2]) for _resid in site_resids],
+                        )
+
+                    site_idx += 1
+
+        # Allocate events to site with most overlaps, breaking ties by lower event number
+        for ref_event_id, ref_event_env in event_environments.items():
+            # Get environment after alignment
+            ref_unified_indexes = []
+            for chain, res in ref_event_env:
+                ref_chain_class = dtag_chain_to_chain_class[(ref_event_id[0], chain)]
+                alignment = msa[ref_chain_class][(ref_event_id[0], chain)]
+
+                if res not in alignment:  # Skip het atoms with no alignment  
+                    continue
+                aligned_index = alignment[res]
+                ref_unified_indexes.append((ref_chain_class[0], ref_chain_class[1], aligned_index))
+
+            # Get overlap with each site
+            site_to_ress =  {v: [k for k in residue_allocations if residue_allocations[k] == v] for v in np.unique([x for x in residue_allocations.values()])}
+            overlaps = {}
+            for site_number, site_resids in site_to_ress.items():
+                overlap = set(site_resids).intersection(ref_unified_indexes)
+                # rprint(f'{ref_event_id} - {site_number}: {len(overlap)}')
+                overlaps[site_number] = overlap
+
+            max_overlap_site = max(overlaps, key=lambda _x: len(overlaps[_x]))
+            if len(overlaps[max_overlap_site]) >= 1:
+                sites[max_overlap_site].event_ids.append(ref_event_id)
+                allocated_events.append(ref_event_id)
+
+            # Handle outliers by creating a new site
+            else:
+                rprint(f'\tEvent {ref_event_id} with environment {sorted(ref_unified_indexes)} has no overlaps with existing sites!')
+                rprint(f'\tCreating new site with residues: {sorted([_resid for _resid in ref_unified_indexes if _resid not in residue_allocations])}')
+                new_site_num = len(sites)+1
+                sites[new_site_num] = Site([ref_event_id], np.zeros(3), dtag=ref_unified_indexes[0][0], residues = [(_resid[1], _resid[2]) for _resid in ref_unified_indexes])
+                for _resid in ref_unified_indexes:
+                    if _resid not in residue_allocations:
+                        residue_allocations[_resid] = new_site_num
+
+        return sites, residue_allocations, msa
