@@ -1839,7 +1839,7 @@ class ResiduePaintingByLeader:
         return [res_id for res_id in res_ids.keys()]
 
 
-    def get_event_environments(self, datasets, events, distance=5.0):
+    def get_event_environments(self, datasets, events, distance=3.5):
         # Get the environments for each event
         event_evenvironments = {}
         for dtag, dataset in datasets.items():
