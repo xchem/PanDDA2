@@ -2220,20 +2220,21 @@ class ResiduePaintingByLeader:
                 )
 
             # Check if any of these ids have already been used
-            if any([(idx in residue_allocations) for idx in env_res_unified_indexes]):
+            if any([(_idx in residue_allocations) for _idx in env_res_unified_indexes]):
                 # If so, this event belongs to an already assigned site and will be assigned to it
+                print(f'\tEvent {event_id} can already be assigned to a site! Skipping!')
                 continue
             else:
                 # If not, Assign these resides to a new site and increment the site number
                 for idx in env_res_unified_indexes:
                     residue_allocations[idx] = site_idx
+                print(f'Creating site for residues: {sorted([(_resid[1], _resid[2]) for _resid in env_res_unified_indexes])}')
                 sites[site_idx] = Site(
                     [], 
                     np.zeros(3), 
                     dtag=env_res_unified_indexes[0][0], 
                     residues=[(_resid[1], _resid[2]) for _resid in env_res_unified_indexes],
                     )
-
                 site_idx += 1
 
         # Allocate events to site with most overlaps, breaking ties by lower event number
