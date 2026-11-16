@@ -2227,14 +2227,14 @@ class ResiduePaintingByLeader:
                 # If not, Assign these resides to a new site and increment the site number
                 for idx in env_res_unified_indexes:
                     residue_allocations[idx] = site_idx
-                    sites[site_idx] = Site(
-                        [], 
-                        np.zeros(3), 
-                        dtag=site_resids[0][0], 
-                        residues=[(_resid[1], _resid[2]) for _resid in site_resids],
-                        )
+                sites[site_idx] = Site(
+                    [], 
+                    np.zeros(3), 
+                    dtag=env_res_unified_indexes[0][0], 
+                    residues=[(_resid[1], _resid[2]) for _resid in env_res_unified_indexes],
+                    )
 
-                    site_idx += 1
+                site_idx += 1
 
         # Allocate events to site with most overlaps, breaking ties by lower event number
         for ref_event_id, ref_event_env in event_environments.items():
