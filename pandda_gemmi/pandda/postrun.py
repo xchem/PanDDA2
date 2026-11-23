@@ -47,7 +47,7 @@ def postrun(
         site_model = ResiduePaintingByLeader(
                 t=0.3, 
                 debug=args.debug,
-                distance=7.0
+                distance=9.0
                 )
     else:
         print(f'Old PanDDA with no msa - using site model: Hierarchical')

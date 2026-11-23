@@ -2279,7 +2279,7 @@ class ResiduePaintingByLeader:
 
             # Handle outliers by creating a new site
             else:
-                rprint(f'\tEvent {ref_event_id} with environment {sorted(ref_unified_indexes)} has no overlaps with existing sites!')
+                rprint(f'\tEvent {ref_event_id} with environment (distance {self.distance}) {sorted(ref_unified_indexes)} has no overlaps with existing sites!')
                 rprint(f'\tCreating new site with residues: {sorted([_resid for _resid in ref_unified_indexes if _resid not in residue_allocations])}')
                 new_site_num = len(sites)+1
                 sites[new_site_num] = Site([ref_event_id], np.zeros(3), dtag=ref_unified_indexes[0][0], residues = [(_resid[1], _resid[2]) for _resid in ref_unified_indexes])

@@ -19,8 +19,24 @@ import argparse
 def score_events_vs_pose_predictions(
     pandda_dir,
     prediction_dir,
+    total=True  # Assert that every prediction has at least one experiment
 ):
+    # Get PanDDA FS model
     
+    # Get PanDDA Events
+
+    # Get prediction FS model
+
+    # For each dataset
+        # Check if any smiles match any predictions
+        
+        # If so, align ligands based on each chain sequence alignment transform
+
+        # Get best RSCC over transforms
+
+    # Format data for output
+
+    # 
     ...
 
 if __name__ == "__main__":
