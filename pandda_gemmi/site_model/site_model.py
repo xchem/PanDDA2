@@ -2239,7 +2239,7 @@ class ResiduePaintingByLeader:
                 for idx in env_res_unified_indexes:
                     residue_allocations[idx] = site_idx
 
-                print(f'Original event environment is: {sorted(event_env)}')
+                print(f'Original event environment (distance {self.distance})  is: {sorted(event_env)}')
                 print(f'Creating site for residues: {sorted([(_resid[1], _resid[2]) for _resid in env_res_unified_indexes])}')
                 
                 sites[site_idx] = Site(
@@ -2279,10 +2279,16 @@ class ResiduePaintingByLeader:
 
             # Handle outliers by creating a new site
             else:
-                rprint(f'\tEvent {ref_event_id} with environment (distance {self.distance}) {sorted(ref_unified_indexes)} has no overlaps with existing sites!')
+                rprint(f'\tEvent {ref_event_id} {sorted(ref_unified_indexes)} has no overlaps with existing sites!')
+                print(f'Original event environment with environment (distance {self.distance})  is: {sorted(event_env)}')
                 rprint(f'\tCreating new site with residues: {sorted([_resid for _resid in ref_unified_indexes if _resid not in residue_allocations])}')
                 new_site_num = len(sites)+1
-                sites[new_site_num] = Site([ref_event_id], np.zeros(3), dtag=ref_unified_indexes[0][0], residues = [(_resid[1], _resid[2]) for _resid in ref_unified_indexes])
+                sites[new_site_num] = Site(
+                    [ref_event_id], 
+                    np.zeros(3), 
+                    dtag=ref_unified_indexes[0][0], 
+                    residues = [(_resid[1], _resid[2]) for _resid in ref_unified_indexes]
+                    )
                 for _resid in ref_unified_indexes:
                     if _resid not in residue_allocations:
                         residue_allocations[_resid] = new_site_num
