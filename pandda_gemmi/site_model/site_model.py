@@ -2235,7 +2235,7 @@ class ResiduePaintingByLeader:
                 print(f'\tEvent {event_id} can already be assigned to a site! Skipping!')
                 continue
             else:
-                print(f'Creating site for: {event_id}')
+                print(f'Creating site for: {event_id} with centroid {events[event_id].centroid}')
                 # If not, Assign these resides to a new site and increment the site number
                 for idx in env_res_unified_indexes:
                     residue_allocations[idx] = site_idx
