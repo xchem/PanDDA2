@@ -1855,6 +1855,12 @@ class ResiduePaintingByLeader:
                     ns,
                     distance=distance,
                 )
+                if len(event_evenvironments[event_id]) == 0:
+                    raise Exception(
+                        f'Event {event_id} has no nearby residues!\n'
+                        f'Event centroid is {event.centroid}'
+                    )
+
 
         return event_evenvironments
 
@@ -2232,7 +2238,9 @@ class ResiduePaintingByLeader:
                 # If not, Assign these resides to a new site and increment the site number
                 for idx in env_res_unified_indexes:
                     residue_allocations[idx] = site_idx
+
                 print(f'Creating site for residues: {sorted([(_resid[1], _resid[2]) for _resid in env_res_unified_indexes])}')
+                
                 sites[site_idx] = Site(
                     [], 
                     np.zeros(3), 
