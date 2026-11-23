@@ -1849,15 +1849,19 @@ class ResiduePaintingByLeader:
 
 
             for event_id, event in dtag_events.items():
-                event_evenvironments[event_id] = self.get_event_environment(
-                    event.pos_array,
-                    st_arr,
-                    ns,
-                    distance=distance,
-                )
-                if len(event_evenvironments[event_id]) == 0:
+                for x in [1.0, 1.3, 1.6, 1.9, 2.2]:
+                    event_environment = self.get_event_environment(
+                        event.pos_array,
+                        st_arr,
+                        ns,
+                        distance=distance*x,
+                    )
+                    if len(event_environment) >=5:
+                        event_evenvironments[event_id] = event_environment
+
+                if event_id not in event_evenvironments:
                     raise Exception(
-                        f'Event {event_id} has no nearby residues!\n'
+                        f'Event {event_id} has not enough nearby residues!\n'
                         f'Event centroid is {event.centroid}'
                     )
 
