@@ -14,3 +14,22 @@ Sequence alignments are determined for each chain and then the ligand is transfo
 with that chain and density tested for RSCC. The best result over all alignments/transforms
 is returned. 
 """
+import argparse
+
+def score_events_vs_pose_predictions(
+    pandda_dir,
+    prediction_dir,
+):
+    
+    ...
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--')
+
+    args = parser.parse_args()
+
+    score_events_vs_pose_predictions(
+        pandda_dir,
+        prediction_dir,
+    )

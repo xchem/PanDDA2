@@ -2239,6 +2239,7 @@ class ResiduePaintingByLeader:
                 for idx in env_res_unified_indexes:
                     residue_allocations[idx] = site_idx
 
+                print(f'Original event environment is: {sorted(event_env)}')
                 print(f'Creating site for residues: {sorted([(_resid[1], _resid[2]) for _resid in env_res_unified_indexes])}')
                 
                 sites[site_idx] = Site(
